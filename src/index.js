@@ -113,7 +113,7 @@ function objMap(obj, func) {
 // stack overflow is the best website for developers
 
 function startGame() {
-    oreDisplays.push(new OreDisplay(stone, 100, 80, true))
+    oreDisplays.push(new OreDisplay(grass, 80, 80, true))
 }
 
 function destroy(target) {
@@ -245,7 +245,9 @@ class Ore {
         this.rarityColor = rarityColors[this.rarityLevel]
         
         allOres.push(this)
-        layerOres[this.layerNum].push(this)
+        if (rarity != 0) {
+            layerOres[this.layerNum].push(this)
+        }
         oreDict[name] = this
 
     }
@@ -265,6 +267,8 @@ class OreDisplay {
 }
 
 let voidOre = new Ore("voidOre", 0, "stone", {"display": "stop breaking my game"})
+let grass = new Ore("grass", 0, "stone")
+let dirt = new Ore("dirt", 0, "stone")
 
 let stone = new Ore("stone", 1, "stone")
 let copper = new Ore("copper", 15, "stone")
