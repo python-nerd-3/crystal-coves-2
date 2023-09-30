@@ -118,6 +118,7 @@ function startGame() {
 
 function destroy(target) {
     oreDisplays.splice(oreDisplays.indexOf(target), 1, new OreDisplay(voidOre, target.pos[0], target.pos[1], true))
+    console.log(target.type)
     addOre(oreDict[target.type], target.deposit ? selectEven([5, 6, 7]) : 1)
     if (target.spawn) {
         generateOre(target.pos[0] - 40, target.pos[1])
@@ -140,7 +141,7 @@ function generateOre(x, y) {
         newOre.type = oreDict[layers[currentLayer]].name
         if (~~(newOre.yOffset / 920) % 10 == 0) {
             newOre.texture = oreDict[layers[currentLayer + 1]].texture
-            newOre.type = layers[currentLayer + 1].name
+            newOre.type = oreDict[layers[currentLayer + 1]].name
         }
     }
     if (newOre.pos[1] == -40) {
@@ -150,9 +151,10 @@ function generateOre(x, y) {
         newOre.type = layers[currentLayer]
         if (~~(newOre.yOffset / 920) % 10 == 9) {
             newOre.texture = oreDict[layers[currentLayer - 1]].texture
-            newOre.type = layers[currentLayer - 1].name
+            newOre.type = oreDict[layers[currentLayer - 1]].name
         }
     } else {
+
     }
     let oreExists = oreDisplays.find((i) => (i.pos[0] == newOre.pos[0] && i.pos[1] == newOre.pos[1] && i.yOffset == newOre.yOffset))
     if (!oreExists) {
@@ -343,6 +345,6 @@ if (localStorage.getItem("save")) {
 
 /*
     TODO LIST 
-    - get font work
+    - read issues
     refactor nothing good job !!!! i think
 */
