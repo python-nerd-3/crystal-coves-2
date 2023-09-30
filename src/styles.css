@@ -1,0 +1,42 @@
+body {
+    background-color: #203;
+}
+
+html {
+    width: 100%;
+    height: 100%;
+}
+
+#gameCanvas {
+    position: absolute;
+    left: calc(50% - 990px);
+    top: calc(50% - 490px);
+    border: 40px solid #96c;
+    border-radius: 40px;
+    background-position: 0px 0px;
+}
+
+#whywontchangebgimageworkbruh {
+    position: absolute;
+    left: calc(50% - 950px);
+    top: calc(50% - 451px);
+    transform: scale(1.01)
+}
+
+@font-face {
+    font-family: "headerFont";
+    src:
+    url(./assets/miscs/headerFont.otf) format("otf"),
+    url(./assets/misc/headerFont.ttf) format("ttf");
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "mainFont";
+    src:
+    url(./assets/miscs/mainFont.otf) format("otf"),
+    url(./assets/misc/mainFont.ttf) format("ttf");
+    font-weight: normal;
+    font-style: normal;
+}
