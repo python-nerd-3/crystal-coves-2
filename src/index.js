@@ -113,18 +113,26 @@ function objMap(obj, func) {
 // stack overflow is the best website for developers
 
 function startGame() {
-    oreDisplays.push(new OreDisplay(grass, 80, 80, true))
+    for (i of Array(40).keys()) {
+        oreDisplays.push(new OreDisplay(grass, i * 40, 160, false))
+        oreDisplays.push(new OreDisplay(dirt, i * 40, 200, false))
+        oreDisplays.push(new OreDisplay(dirt, i * 40, 240, false))
+        oreDisplays.push(new OreDisplay(stone, i * 40, 280, false))
+        oreDisplays.push(new OreDisplay(stone, i * 40, 320, true))
+    }
 }
 
 function destroy(target) {
-    oreDisplays.splice(oreDisplays.indexOf(target), 1, new OreDisplay(voidOre, target.pos[0], target.pos[1], true))
     console.log(target.type)
     addOre(oreDict[target.type], target.deposit ? selectEven([5, 6, 7]) : 1)
     if (target.spawn) {
+        oreDisplays.splice(oreDisplays.indexOf(target), 1, new OreDisplay(voidOre, target.pos[0], target.pos[1], true))
         generateOre(target.pos[0] - 40, target.pos[1])
         generateOre(target.pos[0] + 40, target.pos[1])
         generateOre(target.pos[0], target.pos[1] - 40)
         generateOre(target.pos[0], target.pos[1] + 40)
+    } else {
+        oreDisplays.splice(oreDisplays.indexOf(target), 1)
     }
     if (music.paused) {
         music.play()
@@ -157,7 +165,8 @@ function generateOre(x, y) {
 
     }
     let oreExists = oreDisplays.find((i) => (i.pos[0] == newOre.pos[0] && i.pos[1] == newOre.pos[1] && i.yOffset == newOre.yOffset))
-    if (!oreExists) {
+    
+    if (!oreExists && !(y <= 280 && yOffset == 0)) {
         oreDisplays.push(newOre)
     }
 }
@@ -254,7 +263,7 @@ class Ore {
 }
 
 class OreDisplay {
-    constructor(parent, x, y, spawn) {
+    constructor(parent, x, y, spawn = true) {
         this.texture = parent.texture
         this.type = parent.name
         this.pos = [x, y]
