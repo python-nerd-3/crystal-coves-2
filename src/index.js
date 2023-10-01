@@ -34,7 +34,20 @@ function tick() {
 }
 
 function render() {
-    ctx.clearRect(0, 0, 2000, 920)
+    let bg = ctx.createPattern(voidOre.texture, "repeat");
+    ctx.fillStyle = bg
+    ctx.fillRect(0, 0, 1600, 920)
+    if (yOffset === 0) {
+        ctx.fillStyle = "#77aaff"
+        ctx.fillRect(0, 0, 1600, 280)
+        let skyEase = ctx.createLinearGradient(0, 280, 0, 320)
+        skyEase.addColorStop(0, "#77aaff")
+        skyEase.addColorStop(1, "rgba(0,0,0,0)")
+        ctx.fillStyle = skyEase
+        ctx.fillRect(0, 280, 1600, 40)
+    }
+    ctx.fillStyle = `rgba(0,0,0,${yOffset / (layers.length * 9200 * 2)}`
+    ctx.fillRect(0, 0, 1600, 920)
     oreDisplays.filter((i) => (i.yOffset == yOffset)).forEach((i) => {
         ctx.beginPath()
         ctx.drawImage(i.texture, i.pos[0], i.pos[1], 40, 40)
@@ -325,22 +338,19 @@ document.addEventListener("keydown", (e) => {
     if (e.key == "ArrowDown" && yOffset < 36800) {
         yOffset += 920
         if (~~(yOffset / 920) % 10 == 0) { // weird code bc floats dont wanna work
-            bgImage.src = `assets/bgs/${layers[~~(yOffset / 9200)]}-bg-tile.png`
             voidOre.texture = voidTextures[~~(yOffset / 9200)]
         }
     } else if (e.key == "ArrowUp" && yOffset > 0) {
         yOffset -= 920
         if (~~(yOffset / 920) % 10 == 9) {
-            bgImage.src = `assets/bgs/${layers[~~(yOffset / 9200)]}-bg-tile.png`
             voidOre.texture = voidTextures[~~(yOffset / 9200)]
-        } else {
-            console.log((yOffset / 920) % 10)
         }
     } else if (e.key == "g" && debug) {
         generateOre(100, 120)
     } else if (e.key == "[") {
         invVisible = !invVisible
     } else if (e.key == "s" && e.ctrlKey) {
+        e.preventDefault()
         generateSave()
     }
 })
