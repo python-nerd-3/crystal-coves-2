@@ -56,13 +56,13 @@ function render() {
     if (invVisible) {
         ctx.beginPath();
         ctx.fillStyle = "#331144"
-        ctx.rect(1550, 0, 350, 920)
+        ctx.rect(1250, 0, 350, 920)
         ctx.fill();
         ctx.closePath();
 
         ctx.beginPath();
         ctx.fillStyle = "#9966cc"
-        ctx.rect(1530, 0, 20, 920)
+        ctx.rect(1230, 0, 20, 920)
         ctx.fill();
         ctx.closePath();
 
@@ -71,32 +71,32 @@ function render() {
         ctx.fillStyle == "#9966cc"
 
         discoveredOres.forEach((i) => {
-            ctx.drawImage(i.texture, 1600, 80 + (discoveredOres.indexOf(i) * 100) + invScroll, 60, 60)
-            ctx.fillText(i.properties?.display || capitalizeFirstLetter(i.name), 1670, 100 + (discoveredOres.indexOf(i) * 100) + invScroll)
-            ctx.fillText("1/" + i.rarity.toLocaleString(), 1670, 120 + (discoveredOres.indexOf(i) * 100) + invScroll)
-            ctx.fillText(i.amt.toLocaleString(), 1670, 140 + (discoveredOres.indexOf(i) * 100) + invScroll)
+            ctx.drawImage(i.texture, 1300, 80 + (discoveredOres.indexOf(i) * 100) + invScroll, 60, 60)
+            ctx.fillText(i.properties?.display || capitalizeFirstLetter(i.name), 1370, 100 + (discoveredOres.indexOf(i) * 100) + invScroll)
+            ctx.fillText("1/" + i.rarity.toLocaleString(), 1370, 120 + (discoveredOres.indexOf(i) * 100) + invScroll)
+            ctx.fillText(i.amt.toLocaleString(), 1370, 140 + (discoveredOres.indexOf(i) * 100) + invScroll)
             ctx.strokeStyle = i.rarityColor
             ctx.lineWidth = 5
-            ctx.strokeRect(1597.5, 77.5 + (discoveredOres.indexOf(i) * 100) + invScroll, 62.5, 62.5)
+            ctx.strokeRect(1297.5, 77.5 + (discoveredOres.indexOf(i) * 100) + invScroll, 62.5, 62.5)
         })
 
         ctx.closePath();
 
         ctx.beginPath();
         ctx.fillStyle = "#331144"
-        ctx.rect(1550, 0, 350, 60)
+        ctx.rect(1250, 0, 350, 60)
         ctx.fill();
         ctx.closePath();
 
         ctx.beginPath();
         ctx.fillStyle = "#9966cc"
-        ctx.rect(1550, 0, 350, 10)
+        ctx.rect(1250, 0, 350, 10)
         ctx.fill();
         ctx.closePath();
 
         ctx.beginPath();
         ctx.font = "30px sans-serif";
-        ctx.fillText("INVENTORY", 1635, 50)
+        ctx.fillText("INVENTORY", 1335, 50)
         ctx.closePath();
         
     }
@@ -166,7 +166,7 @@ function generateOre(x, y) {
     }
     let oreExists = oreDisplays.find((i) => (i.pos[0] == newOre.pos[0] && i.pos[1] == newOre.pos[1] && i.yOffset == newOre.yOffset))
     
-    if (!oreExists && !(y <= 280 && yOffset == 0)) {
+    if (!oreExists && !(y <= 280 && yOffset == 0) && 0 <= x && x <= 1600) {
         oreDisplays.push(newOre)
     }
 }

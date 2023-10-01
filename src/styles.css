@@ -9,7 +9,7 @@ html {
 
 #gameCanvas {
     position: absolute;
-    left: calc(50% - 990px);
+    left: calc(50% - 840px);
     top: calc(50% - 490px);
     border: 40px solid #96c;
     border-radius: 40px;
