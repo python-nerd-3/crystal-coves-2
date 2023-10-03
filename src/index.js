@@ -53,7 +53,7 @@ function render() {
         ctx.drawImage(i.texture, i.pos[0], i.pos[1], 40, 40)
         if (i.deposit) {
             ctx.strokeStyle = "white";
-            ctx.lineWidth = 4;
+            ctx.lineWidth = 2;
             ctx.strokeRect(i.pos[0], i.pos[1], 40, 40)
         }
         ctx.closePath()
@@ -86,7 +86,13 @@ function render() {
         discoveredOres.forEach((i) => {
             ctx.drawImage(i.texture, 1300, 80 + (discoveredOres.indexOf(i) * 100) + invScroll, 60, 60)
             ctx.fillText(i.properties?.display || capitalizeFirstLetter(i.name), 1370, 100 + (discoveredOres.indexOf(i) * 100) + invScroll)
-            ctx.fillText("1/" + i.rarity.toLocaleString(), 1370, 120 + (discoveredOres.indexOf(i) * 100) + invScroll)
+            if (i.rarity == 0) {
+                ctx.fillText("Misc", 1370, 120 + (discoveredOres.indexOf(i) * 100) + invScroll)
+            } else if (i.rarity == 1) {
+                ctx.fillText("Layer ore", 1370, 120 + (discoveredOres.indexOf(i) * 100) + invScroll)
+            } else {
+                ctx.fillText("1/" + i.rarity.toLocaleString(), 1370, 120 + (discoveredOres.indexOf(i) * 100) + invScroll)
+            }
             ctx.fillText(i.amt.toLocaleString(), 1370, 140 + (discoveredOres.indexOf(i) * 100) + invScroll)
             ctx.strokeStyle = i.rarityColor
             ctx.lineWidth = 5
