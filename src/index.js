@@ -211,7 +211,7 @@ function addOre(type, num) {
 
 function click(e) {
     let clickPos = [e.layerX - 40, e.layerY - 40]
-    let foundButton = buttons.find((i) => (i.pos[0] <= clickPos[0] && i.cornerPos[0] >= clickPos[0] && i.pos[1] <= clickPos[1] && i.cornerPos[1] >= clickPos[1] && !buttons.hidden))
+    let foundButton = buttons.find((i) => ((i.pos[0] - (i.sidebar && invVisible ? 370 : 0)) <= clickPos[0] && (i.cornerPos[0] - (i.sidebar && invVisible ? 370 : 0)) >= clickPos[0] && i.pos[1] <= clickPos[1] && i.cornerPos[1] >= clickPos[1] && !buttons.hidden))
     if (foundButton) {
         console.log(foundButton)
         foundButton.func()
