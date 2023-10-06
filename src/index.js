@@ -1,5 +1,5 @@
 
-// YO WHATS UP before you dig into my code watch https://www.youtube.com/watch?v=EAOxlNiDWt0
+// hi before you dig into my code watch https://www.youtube.com/watch?v=EAOxlNiDWt0
 
 let canvas = document.querySelector("#gameCanvas")
 let ctx = canvas.getContext("2d")
@@ -13,6 +13,7 @@ let layerOres = [[], [], [], []]
 let discoveredOres = []
 let voidTextures = []
 let oreDict = {}
+let buttons = []
 let yOffset = 0
 let bgImage = document.querySelector("#whywontchangebgimageworkbruh")
 let debug = window.location.href.includes("file")
@@ -26,7 +27,7 @@ let music = new Audio("./assets/audio/music.mp3")
 music.loop = true
 
 function tick() {
-    if (loadProg == allOres.length + layerOres.length && loaded == false) {
+    if (loadProg >= allOres.length + layerOres.length + buttons.length && loaded == false) {
         console.log("Loaded textures in " + performance.now() + "ms")
         loaded = true
         startGame()
@@ -53,8 +54,17 @@ function render() {
         ctx.drawImage(i.texture, i.pos[0], i.pos[1], 40, 40)
         if (i.deposit) {
             ctx.strokeStyle = "white";
-            ctx.lineWidth = 4;
+            ctx.lineWidth = 2;
             ctx.strokeRect(i.pos[0], i.pos[1], 40, 40)
+        }
+        ctx.closePath()
+    })
+    buttons.forEach( (i) => {
+        ctx.beginPath()
+        if (i.sidebar && invVisible) {
+            ctx.drawImage(i.texture, i.pos[0] - 370, i.pos[1], i.size, i.size)
+        } else {
+            ctx.drawImage(i.texture, i.pos[0], i.pos[1], i.size, i.size)
         }
         ctx.closePath()
     })
@@ -86,7 +96,13 @@ function render() {
         discoveredOres.forEach((i) => {
             ctx.drawImage(i.texture, 1300, 80 + (discoveredOres.indexOf(i) * 100) + invScroll, 60, 60)
             ctx.fillText(i.properties?.display || capitalizeFirstLetter(i.name), 1370, 100 + (discoveredOres.indexOf(i) * 100) + invScroll)
-            ctx.fillText("1/" + i.rarity.toLocaleString(), 1370, 120 + (discoveredOres.indexOf(i) * 100) + invScroll)
+            if (i.rarity == 0) {
+                ctx.fillText("Misc", 1370, 120 + (discoveredOres.indexOf(i) * 100) + invScroll)
+            } else if (i.rarity == 1) {
+                ctx.fillText("Layer ore", 1370, 120 + (discoveredOres.indexOf(i) * 100) + invScroll)
+            } else {
+                ctx.fillText("1/" + i.rarity.toLocaleString(), 1370, 120 + (discoveredOres.indexOf(i) * 100) + invScroll)
+            }
             ctx.fillText(i.amt.toLocaleString(), 1370, 140 + (discoveredOres.indexOf(i) * 100) + invScroll)
             ctx.strokeStyle = i.rarityColor
             ctx.lineWidth = 5
@@ -123,7 +139,7 @@ function objMap(obj, func) {
     return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, func(v)]));
 } // thank you 49.2k rep stack overflow guy
 
-// stack overflow is the best website for developers
+// stack overflow is th​e best website for developers
 
 function startGame() {
     for (let i of Array(40).keys()) {
@@ -174,8 +190,6 @@ function generateOre(x, y) {
             newOre.texture = oreDict[layers[currentLayer - 1]].texture
             newOre.type = oreDict[layers[currentLayer - 1]].name
         }
-    } else {
-
     }
     let oreExists = oreDisplays.find((i) => (i.pos[0] == newOre.pos[0] && i.pos[1] == newOre.pos[1] && i.yOffset == newOre.yOffset))
     
@@ -197,6 +211,12 @@ function addOre(type, num) {
 
 function click(e) {
     let clickPos = [e.layerX - 40, e.layerY - 40]
+    let foundButton = buttons.find((i) => ((i.pos[0] - (i.sidebar && invVisible ? 370 : 0)) <= clickPos[0] && (i.cornerPos[0] - (i.sidebar && invVisible ? 370 : 0)) >= clickPos[0] && i.pos[1] <= clickPos[1] && i.cornerPos[1] >= clickPos[1] && !buttons.hidden))
+    if (foundButton) {
+        console.log(foundButton)
+        foundButton.func()
+        return // documentation is for noobs
+    }
     let foundOre = oreDisplays.find((i) => (i.pos[0] <= clickPos[0] && i.cornerPos[0] >= clickPos[0] && i.pos[1] <= clickPos[1] && i.cornerPos[1] >= clickPos[1] && i.type != "voidOre" && i.yOffset == yOffset))
     if (foundOre) {
         destroy(foundOre)
@@ -215,6 +235,8 @@ function select(list) {
 function selectEven(list) {
     return list[~~(Math.random() * list.length)]
 }
+
+// one of these comments has a zero width space you will never know which one haha
 
 function generateSave() {
     let oreSave = objMap(oreDict, (i) => {return [!i.discovered, (i.amt * (i.name.charCodeAt(0) - 96))]})
@@ -288,6 +310,25 @@ class OreDisplay {
     }
 }
 
+class Button {
+    // java has done something to me
+    constructor(name, pos, size, txSize, func, sidebar = true) {
+        this.name = name
+        this.pos = pos
+        this.size = size
+        this.func = func
+        this.sidebar = sidebar
+
+        this.cornerPos = [pos[0] + size, pos[1] + size]
+        this.texture = new Image(txSize, txSize)
+        this.texture.src = `assets/gui/${name}.png`
+        this.texture.onload = () => {loadProg += 1}
+
+        this.hidden = false
+        buttons.push(this) 
+    }
+}
+
 let voidOre = new Ore("voidOre", 0, "stone", {"display": "stop breaking my game"})
 let grass = new Ore("grass", 0, "stone")
 let dirt = new Ore("dirt", 0, "stone")
@@ -318,7 +359,8 @@ basalt.percentChunk = [percentsUsed[2], 100]
 let magma = new Ore("magma", 1, "magma")
 magma.percentChunk = [percentsUsed[3], 100]
 
-voidOre.percentChunk = [-1, -1]
+let inv = new Button("inv", [1525, 10], 64, 32, () => {invVisible = !invVisible})
+let save = new Button("save", [1525, 85], 64, 32, generateSave)
 
 for (let i of layers) {
     let tx = new Image(16, 16)
