@@ -142,7 +142,7 @@ function objMap(obj, func) {
 // stack overflow is th​e best website for developers
 
 function startGame() {
-    for (i of Array(40).keys()) {
+    for (let i of Array(40).keys()) {
         oreDisplays.push(new OreDisplay(grass, i * 40, 160, false))
         oreDisplays.push(new OreDisplay(dirt, i * 40, 200, false))
         oreDisplays.push(new OreDisplay(dirt, i * 40, 240, false))
@@ -225,7 +225,7 @@ function click(e) {
 
 function select(list) {
     let percent = Math.random() * 100
-    for (i of list) {
+    for (let i of list) {
         if (i.percentChunk[0] <= percent && i.percentChunk[1] > percent) {
             return i//;
         }
@@ -249,7 +249,7 @@ function generateSave() {
 function loadSave() {
     let decryptedSave = JSON.parse(atob(localStorage.getItem("save")))
     console.log(decryptedSave)
-    for (i in decryptedSave.ores) {
+    for (let i in decryptedSave.ores) {
         console.log(i)
         oreDict[i].amt = decryptedSave.ores[i][1] / (oreDict[i].name.charCodeAt(0) - 96)
         if (~~(oreDict[i].amt) != oreDict[i].amt || (oreDict[i].amt != 0 && decryptedSave.ores[i][0])) {
@@ -365,7 +365,7 @@ magma.percentChunk = [percentsUsed[3], 100]
 let inv = new Button("inv", [1525, 10], 64, 32, () => {invVisible = !invVisible})
 let save = new Button("save", [1525, 85], 64, 32, generateSave)
 
-for (i of layers) {
+for (let i of layers) {
     let tx = new Image(16, 16)
     tx.src = `assets/bgs/${i}-bg.png`
     voidTextures.push(tx)
