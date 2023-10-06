@@ -101,30 +101,30 @@ function render() {
             } else if (i.rarity == 1) {
                 ctx.fillText("Layer ore", 1370, 120 + (discoveredOres.indexOf(i) * 100) + invScroll)
             } else {
-                ctx.fillText("1/" + i.rarity.toLocaleString(), 1370, 120 + (discoveredOres.indexOf(i) * 100) + invScroll)
+                ctx.fillText("1/" + i.rarity.toLocaleString(), 1370, 120 + (discoveredOres.indexOf(i) * 100) + invScroll);
             }
-            ctx.fillText(i.amt.toLocaleString(), 1370, 140 + (discoveredOres.indexOf(i) * 100) + invScroll)
+            ctx.fillText(i.amt.toLocaleString(), 1370, 140 + (discoveredOres.indexOf(i) * 100) + invScroll);
             ctx.strokeStyle = i.rarityColor
             ctx.lineWidth = 5
-            ctx.strokeRect(1297.5, 77.5 + (discoveredOres.indexOf(i) * 100) + invScroll, 62.5, 62.5)
+            ctx.strokeRect(1297.5, 77.5 + (discoveredOres.indexOf(i) * 100) + invScroll, 62.5, 62.5);
         })
 
         ctx.closePath();
 
         ctx.beginPath();
-        ctx.fillStyle = "#331144"
-        ctx.rect(1250, 0, 350, 60)
+        ctx.fillStyle = "#331144";
+        ctx.rect(1250, 0, 350, 60);
         ctx.fill();
         ctx.closePath();
 
         ctx.beginPath();
         ctx.fillStyle = "#9966cc"
         ctx.rect(1250, 0, 350, 10)
-        ctx.fill();
-        ctx.closePath();
+        ctx.fill()
+        ctx.closePath()
 
         ctx.beginPath();
-        ctx.font = "30px sans-serif";
+        ctx.font = "30px sans-serif"
         ctx.fillText("INVENTORY", 1335, 50)
         ctx.closePath();
         
@@ -202,9 +202,9 @@ function addOre(type, num) {
     type.amt += num
     type.discovered = true
     if (!discoveredOres.includes(type)) {
-        discoveredOres.push(type)
+        discoveredOres.push(type);
         discoveredOres.sort((a, b) => {
-            return a.rarity - b.rarity
+            return a.rarity - b.rarity;
         })
     }
 }
@@ -215,7 +215,7 @@ function click(e) {
     if (foundButton) {
         console.log(foundButton)
         foundButton.func()
-        return // documentation is for noobs
+        return // documentation is for noobs ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; < justin dedicated semicolon area
     }
     let foundOre = oreDisplays.find((i) => (i.pos[0] <= clickPos[0] && i.cornerPos[0] >= clickPos[0] && i.pos[1] <= clickPos[1] && i.cornerPos[1] >= clickPos[1] && i.type != "voidOre" && i.yOffset == yOffset))
     if (foundOre) {
@@ -227,7 +227,7 @@ function select(list) {
     let percent = Math.random() * 100
     for (i of list) {
         if (i.percentChunk[0] <= percent && i.percentChunk[1] > percent) {
-            return i
+            return i//;
         }
     }
 }
@@ -243,6 +243,7 @@ function generateSave() {
     let save = {ores: oreSave}
     let encryptedSave = btoa(JSON.stringify(save))
     localStorage.setItem("save", encryptedSave)
+    // screwing around with this because sc3d said not to
 }
 
 function loadSave() {
@@ -253,7 +254,7 @@ function loadSave() {
         oreDict[i].amt = decryptedSave.ores[i][1] / (oreDict[i].name.charCodeAt(0) - 96)
         if (~~(oreDict[i].amt) != oreDict[i].amt || (oreDict[i].amt != 0 && decryptedSave.ores[i][0])) {
             localStorage.removeItem("save")
-            window.location = "https://youtu.be/NNv2RHR62Rs?t=9"
+            window.write("rip bozo 💀💀💀💀")
         }
         oreDict[i].discovered = !decryptedSave.ores[i][0]
         if (!discoveredOres.includes(oreDict[i]) && !decryptedSave.ores[i][0]) {
@@ -293,7 +294,7 @@ class Ore {
             layerOres[this.layerNum].push(this)
         }
         oreDict[name] = this
-
+// AGHGHAGHGAGGAHGAHGGHA!????????!?!?!
     }
 }
 
@@ -332,7 +333,9 @@ class Button {
 let voidOre = new Ore("voidOre", 0, "stone", {"display": "stop breaking my game"})
 let grass = new Ore("grass", 0, "stone")
 let dirt = new Ore("dirt", 0, "stone")
-
+// above do not spawn randomly
+// they are fixed layers
+// AMOGUS! - sc3d
 let stone = new Ore("stone", 1, "stone")
 let copper = new Ore("copper", 15, "stone")
 let iron = new Ore("iron", 20, "stone")
@@ -358,7 +361,7 @@ basalt.percentChunk = [percentsUsed[2], 100]
 
 let magma = new Ore("magma", 1, "magma")
 magma.percentChunk = [percentsUsed[3], 100]
-
+// all above is redonculuous
 let inv = new Button("inv", [1525, 10], 64, 32, () => {invVisible = !invVisible})
 let save = new Button("save", [1525, 85], 64, 32, generateSave)
 
@@ -412,4 +415,15 @@ if (localStorage.getItem("save")) {
     TODO LIST 
     - read issues
     refactor nothing good job !!!! i think
+    - Fard
+    - listen to sc3d
+    - add 
+    - why
+    - never gonna give you up
+    - never gonna let you down
+    - never gonna run around
+    - and desertyou
+    - add smurf cat ore description: (we die, we hate, we truth)
+    - remove the ideas below refactor nothing good job !!! (jk) :o i'm so offended
+    - reddit user confirmed
 */
