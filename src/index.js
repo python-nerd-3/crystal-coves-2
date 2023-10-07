@@ -20,6 +20,8 @@ let debug = window.location.href.includes("file")
 let invVisible = false 
 let invScroll = 0
 let rarityColors = {"base": "#7f7f7f", "common": "#d9d9d9", "uncommon": "#93c47d", "rare": "#4a86e8", "epic": "#ffd966", "mythic": "#46bdc6", "unseen": "#9900ff", "beyond": "#000000"}
+let settingsVisible = false
+let menuOpen = false
 
 ctx.imageSmoothingEnabled = false;
 
@@ -59,7 +61,7 @@ function render() {
         }
         ctx.closePath()
     })
-    buttons.forEach( (i) => {
+    buttons.filter((i) => {return !i.aboveMenu && !i.hidden}).forEach( (i) => {
         ctx.beginPath()
         if (i.sidebar && invVisible) {
             ctx.drawImage(i.texture, i.pos[0] - 370, i.pos[1], i.size, i.size)
@@ -129,6 +131,21 @@ function render() {
         ctx.closePath();
         
     }
+    if (menuOpen) {
+        ctx.beginPath();
+        ctx.fillStyle = "rgba(0, 0, 0, 0.5)"
+        ctx.fillRect(0, 0, 1600, 920)
+    }
+
+    buttons.filter((i) => {return i.aboveMenu && !i.hidden}).forEach((i) => {
+        ctx.beginPath()
+        if (i.sidebar && invVisible) {
+            ctx.drawImage(i.texture, i.pos[0] - 370, i.pos[1], i.size, i.size)
+        } else {
+            ctx.drawImage(i.texture, i.pos[0], i.pos[1], i.size, i.size)
+        }
+        ctx.closePath()
+    })
 } 
 
 function capitalizeFirstLetter(string) {
@@ -212,14 +229,16 @@ function addOre(type, num) {
 function click(e) {
     let clickPos = [e.layerX - 40, e.layerY - 40]
     let foundButton = buttons.find((i) => ((i.pos[0] - (i.sidebar && invVisible ? 370 : 0)) <= clickPos[0] && (i.cornerPos[0] - (i.sidebar && invVisible ? 370 : 0)) >= clickPos[0] && i.pos[1] <= clickPos[1] && i.cornerPos[1] >= clickPos[1] && !buttons.hidden))
-    if (foundButton) {
+    if (foundButton && (!menuOpen || foundButton.aboveMenu)) {
         console.log(foundButton)
         foundButton.func()
-        return // documentation is for noobs ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; < justin dedicated semicolon area
+        return // documentation is for noobs ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; < dedicated semicolon area
     }
-    let foundOre = oreDisplays.find((i) => (i.pos[0] <= clickPos[0] && i.cornerPos[0] >= clickPos[0] && i.pos[1] <= clickPos[1] && i.cornerPos[1] >= clickPos[1] && i.type != "voidOre" && i.yOffset == yOffset))
-    if (foundOre) {
-        destroy(foundOre)
+    if (!menuOpen) {
+        let foundOre = oreDisplays.find((i) => (i.pos[0] <= clickPos[0] && i.cornerPos[0] >= clickPos[0] && i.pos[1] <= clickPos[1] && i.cornerPos[1] >= clickPos[1] && i.type != "voidOre" && i.yOffset == yOffset))
+        if (foundOre) {
+            destroy(foundOre)
+        }
     }
 }
 
@@ -313,12 +332,13 @@ class OreDisplay {
 
 class Button {
     // java has done something to me
-    constructor(name, pos, size, txSize, func, sidebar = true) {
+    constructor(name, pos, size, txSize, func, sidebar = true, aboveMenu = false) {
         this.name = name
         this.pos = pos
         this.size = size
         this.func = func
         this.sidebar = sidebar
+        this.aboveMenu = aboveMenu
 
         this.cornerPos = [pos[0] + size, pos[1] + size]
         this.texture = new Image(txSize, txSize)
@@ -333,9 +353,9 @@ class Button {
 let voidOre = new Ore("voidOre", 0, "stone", {"display": "stop breaking my game"})
 let grass = new Ore("grass", 0, "stone")
 let dirt = new Ore("dirt", 0, "stone")
-// above do not spawn randomly
-// they are fixed layers
-// AMOGUS! - sc3d
+/* above do not spawn randomly
+they are fixed layers
+AMOGUS! - sc3d*/
 let stone = new Ore("stone", 1, "stone")
 let copper = new Ore("copper", 15, "stone")
 let iron = new Ore("iron", 20, "stone")
@@ -362,8 +382,10 @@ basalt.percentChunk = [percentsUsed[2], 100]
 let magma = new Ore("magma", 1, "magma")
 magma.percentChunk = [percentsUsed[3], 100]
 // all above is redonculuous
+// no.
 let inv = new Button("inv", [1525, 10], 64, 32, () => {invVisible = !invVisible})
 let save = new Button("save", [1525, 85], 64, 32, generateSave)
+let settings = new Button("settings", [1525, 160], 64, 32, () => {settingsVisible = !settingsVisible; menuOpen = !menuOpen}, true, true)
 
 for (let i of layers) {
     let tx = new Image(16, 16)
@@ -378,7 +400,7 @@ setInterval(tick, 10)
 setInterval(render, 16)
 setInterval(generateSave, 10000)
 
-canvas.addEventListener("click", click)
+canvas.addEventListener("click", click) // spaghet
 document.addEventListener("keydown", (e) => {
     if (e.key == "ArrowDown" && yOffset < 36800) {
         yOffset += 920
@@ -415,15 +437,7 @@ if (localStorage.getItem("save")) {
     TODO LIST 
     - read issues
     refactor nothing good job !!!! i think
-    - Fard
     - listen to sc3d
-    - add 
-    - why
-    - never gonna give you up
-    - never gonna let you down
-    - never gonna run around
-    - and desertyou
     - add smurf cat ore description: (we die, we hate, we truth)
     - remove the ideas below refactor nothing good job !!! (jk) :o i'm so offended
-    - reddit user confirmed
 */
