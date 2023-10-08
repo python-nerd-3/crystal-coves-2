@@ -56,8 +56,8 @@ function render() {
         ctx.drawImage(i.texture, i.pos[0], i.pos[1], 40, 40)
         if (i.deposit) {
             ctx.strokeStyle = "white";
-            ctx.lineWidth = 2;
-            ctx.strokeRect(i.pos[0], i.pos[1], 40, 40)
+            ctx.lineWidth = 5;
+            ctx.strokeRect(i.pos[0] - 0.5, i.pos[1] + 0.5, 40, 40)
         }
         ctx.closePath()
     })
@@ -92,7 +92,7 @@ function render() {
         ctx.closePath();
 
         ctx.beginPath();
-        ctx.font = "20px sans-serif"
+        ctx.font = "20px mainFont"
         ctx.fillStyle == "#9966cc"
 
         discoveredOres.forEach((i) => {
@@ -132,9 +132,29 @@ function render() {
         
     }
     if (menuOpen) {
-        ctx.beginPath();
+        ctx.beginPath()
         ctx.fillStyle = "rgba(0, 0, 0, 0.5)"
         ctx.fillRect(0, 0, 1600, 920)
+        ctx.closePath()
+    }
+    if (settingsVisible) {
+        ctx.beginPath();
+        ctx.fillStyle = "#9966cc"
+        ctx.rect(480, 40, 640, 840)
+        ctx.fill()
+        ctx.closePath()
+
+        ctx.beginPath()
+        ctx.fillStyle = "#331144"
+        ctx.rect(500, 60, 600, 800)
+        ctx.fill()
+        ctx.closePath()
+
+        ctx.beginPath()
+        ctx.fillStyle = "#9966cc"
+        ctx.font = "50px sans-serif"
+        ctx.fillText("SETTINGS", 670, 120)
+        ctx.closePath()
     }
 
     buttons.filter((i) => {return i.aboveMenu && !i.hidden}).forEach((i) => {
@@ -385,7 +405,9 @@ magma.percentChunk = [percentsUsed[3], 100]
 // no.
 let inv = new Button("inv", [1525, 10], 64, 32, () => {invVisible = !invVisible})
 let save = new Button("save", [1525, 85], 64, 32, generateSave)
-let settings = new Button("settings", [1525, 160], 64, 32, () => {settingsVisible = !settingsVisible; menuOpen = !menuOpen}, true, true)
+let settings = new Button("settings", [1525, 160], 64, 32, () => {settingsVisible = true; menuOpen = true; closeSettings.hidden = false}, true, false)
+let closeSettings = new Button("closeSettings", [1025, 70], 64, 32, () => {settingsVisible = false; menuOpen = false; closeSettings.hidden = true}, false, true)
+closeSettings.hidden = true
 
 for (let i of layers) {
     let tx = new Image(16, 16)
