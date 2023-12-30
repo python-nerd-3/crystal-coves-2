@@ -22,18 +22,27 @@ let invScroll = 0
 let rarityColors = {"base": "#7f7f7f", "common": "#d9d9d9", "uncommon": "#93c47d", "rare": "#4a86e8", "epic": "#ffd966", "mythic": "#46bdc6", "unseen": "#9900ff", "beyond": "#000000"}
 let settingsVisible = false
 let menuOpen = false
+let parsToLoad = ["placeholder", "char", "dust", "sparkle"]
+let parTextures = {}
+let particles = []
+let deadIds = []
+let parSum = 0
+let parTime = 0
+const dtrConstant = Math.PI / 180
 
-ctx.imageSmoothingEnabled = false;
+ctx.imageSmoothingEnabled = false
 
 let music = new Audio("./assets/audio/music.mp3")
 music.loop = true
 
 function tick() {
-    if (loadProg >= allOres.length + layerOres.length + buttons.length && loaded == false) {
+    if (loadProg >= allOres.length + layerOres.length + buttons.length + parsToLoad.length && loaded == false) {
         console.log("Loaded textures in " + performance.now() + "ms")
         loaded = true
         startGame()
     }
+    areaPars()
+    render()
 }
 
 function render() {
@@ -59,7 +68,15 @@ function render() {
             ctx.lineWidth = 5;
             ctx.strokeRect(i.pos[0] - 0.5, i.pos[1] + 0.5, 40, 40)
         }
+        if (i.particles && (parTime + i.spawnTime) % i.particles.frequency == 0) {
+            new Particle(i.particles.texture, "decay", "offset", i.pos[0] + 20, i.pos[1] + 20, Math.random() * 360, i.particles.speed, i.particles.lifetime)
+        }
         ctx.closePath()
+    })
+    particles = particles.filter((i) => !deadIds.includes(i.id))
+    particles.forEach((i) => {
+        ctx.drawImage(i.tx, i.pos[0] - 4, i.pos[1] - 4, 8, 8)
+        i.tick()
     })
     buttons.filter((i) => {return !i.aboveMenu && !i.hidden}).forEach( (i) => {
         ctx.beginPath()
@@ -92,7 +109,7 @@ function render() {
         ctx.closePath();
 
         ctx.beginPath();
-        ctx.font = "20px mainFont"
+        ctx.font = "20px sans-serif"
         ctx.fillStyle == "#9966cc"
 
         discoveredOres.forEach((i) => {
@@ -167,6 +184,26 @@ function render() {
         ctx.closePath()
     })
 } 
+
+function areaPars() {
+    parTime += 1
+    if (yOffset >= 27600) {
+        for (i of Array(5).keys()) {
+            new Particle("char", "gravity", "layer",  Math.random() * 1600, 940, (Math.random() - 0.5) * 12, (Math.random() * 10) + 10, 2)
+        }
+        if (parTime % 15 == 0) { // refactor this to use intervals but not break
+            new Particle("char", "sts", "layer", (Math.random() * 600), 6, Math.random() * 5 + 70)
+        }
+    } else if (yOffset >= 18400) {
+        for (i of Array(8).keys()) {
+            new Particle("dust", "sts", "layer", Math.random() * 920, 8, Math.random() * 10 + 85)
+        }
+    } else if (yOffset >= 9200) {
+        for (i of Array(4).keys()) {
+            new Particle("dust", "sts", "layer", Math.random() * 920, 8, Math.random() * 10 + 85)
+        }
+    }
+}
 
 function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
@@ -328,12 +365,14 @@ class Ore {
         this.rarityLevel = rarity >= 2 ? rarity >= 75 ? rarity >= 250 ? rarity >= 1000 ? rarity >= 7500 ? rarity >= 25000 ? rarity >= 125000 ? "beyond" : "unseen" : "mythic" : "epic" : "rare" : "uncommon" : "common" : "base"
         this.rarityColor = rarityColors[this.rarityLevel]
         
+        this.particles = null
+
         allOres.push(this)
         if (rarity != 0) {
             layerOres[this.layerNum].push(this)
         }
         oreDict[name] = this
-// AGHGHAGHGAGGAHGAHGGHA!????????!?!?!
+        // AGHGHAGHGAGGAHGAHGGHA!????????!?!?!
     }
 }
 
@@ -347,6 +386,8 @@ class OreDisplay {
         this.yOffset = yOffset
         this.literalY = y + yOffset
         this.deposit = Math.random() > 0.95 && parent.rarity > 1
+        this.particles = parent.particles
+        this.spawnTime = parTime
     }
 }
 
@@ -370,12 +411,112 @@ class Button {
     }
 }
 
+parsToLoad.forEach((i) => {
+    img = new Image(8, 8)
+    img.src = `assets/particles/${i}.png`
+    img.onload = () => {loadProg += 1}
+    parTextures[i] = img // would use map but no worky
+})
+
+class Particle {
+    constructor(tx, mov, cullType) {
+        let args = arguments
+        this.mov = mov
+        this.tx = parTextures[tx]
+        this.id = parSum
+        parSum += 1
+        this.yOffset = yOffset
+        this.cullType = cullType
+        this.layer = ~~(yOffset / 9200)
+        this.dead = false
+        if (mov == "sts") {
+            /* 
+            side to side
+            args: tx, mov, sy (start y), speed, angle
+            */
+           this.sx = args[6] || 0
+           this.sy = args[3]
+           this.speed = args[4]
+           this.angle = args[5]
+           this.pos = [this.sx, 900 - this.sy]
+           this.dangle = dtrConstant * this.angle // i cant name variables
+           this.tmove = [Math.sin(this.dangle) * this.speed, -Math.cos(this.dangle) * this.speed]
+        }
+        if (mov == "decay") {
+            this.x = args[3]
+            this.y = args[4]
+            this.angle = args[5]
+            this.speed = args[6]
+            this.lifetime = args[7]
+            this.pos = [this.x, this.y]
+            this.dangle = dtrConstant * this.angle // i cant name variables
+            this.tmove = [Math.sin(this.dangle) * this.speed, -Math.cos(this.dangle) * this.speed]
+            this.life = 0
+        }
+        if (mov == "gravity") {
+            this.x = args[3]
+            this.y = args[4]
+            this.dx = args[5]
+            this.dy = args[6]
+            this.grav = args[7]
+            this.pos = [this.x, this.y]
+        }
+        particles.push(this)
+    }
+
+    tick() {
+        if (deadIds.includes(this.id) || this.dead) {
+            this.dead = true
+            return
+        }
+        if (this.mov == "sts") {
+            this.pos[0] += this.tmove[0]
+            this.pos[1] += this.tmove[1]
+            // almost all languages have double inequalities
+            if (!(0 < this.pos[0] && this.pos[0] < 1600 && 0 < this.pos[1] && this.pos[1] < 900)) {
+                deadIds.push(this.id)
+                console.log("rip")
+            } else if (yOffset != this.yOffset && this.cullType == "offset") {
+                deadIds.push(this.id)
+            } else if (~~(yOffset / 9200) != this.layer && this.cullType == "layer") {
+                deadIds.push(this.id)
+            }
+        }
+        if (this.mov == "decay") {
+            this.pos[0] += this.tmove[0]
+            this.pos[1] += this.tmove[1]
+            this.life += 1
+            if (this.life >= this.lifetime) {
+                deadIds.push(this.id)
+                console.log("rip")
+            } else if (yOffset != this.yOffset && this.cullType == "offset") {
+                deadIds.push(this.id)
+            } else if (~~(yOffset / 9200) != this.layer && this.cullType == "layer") {
+                deadIds.push(this.id)
+            }
+        }
+        if (this.mov == "gravity") {
+            this.pos[0] += this.dx
+            this.pos[1] -= this.dy
+            this.dy -= this.grav
+            if (this.pos[1] >= 950) {
+                deadIds.push(this.id)
+            } else if (yOffset != this.yOffset && this.cullType == "offset") {
+                deadIds.push(this.id)
+            } else if (~~(yOffset / 9200) != this.layer && this.cullType == "layer") {
+                deadIds.push(this.id)
+            }
+        }
+    }
+}
+
 let voidOre = new Ore("voidOre", 0, "stone", {"display": "stop breaking my game"})
 let grass = new Ore("grass", 0, "stone")
 let dirt = new Ore("dirt", 0, "stone")
 /* above do not spawn randomly
 they are fixed layers
 AMOGUS! - sc3d*/
+
 let stone = new Ore("stone", 1, "stone")
 let copper = new Ore("copper", 15, "stone")
 let iron = new Ore("iron", 20, "stone")
@@ -383,7 +524,9 @@ let coal = new Ore("coal", 25, "stone")
 let quartz = new Ore("quartz", 30, "stone")
 let pyrite = new Ore("pyrite", 80, "stone")
 let gold = new Ore("gold", 650, "stone")
+gold.particles = {frequency: 8, texture: "sparkle", speed: 3, lifetime: 20}
 let roseGold = new Ore("roseGold", 1111, "stone", {"display": "Rose Gold"})
+roseGold.particles = {frequency: 8, texture: "sparkle", speed: 3, lifetime: 20}
 
 let emerald = new Ore("emerald", 1500, "stone")
 stone.percentChunk = [percentsUsed[0], 100]
@@ -392,6 +535,7 @@ let denseStone = new Ore("denseStone", 1, "denseStone", {"display": "Dense Stone
 let denseIron = new Ore("denseIron", 20, "denseStone", {"display": "Dense Iron"})
 let denseCoal = new Ore("denseCoal", 20, "denseStone", {"display": "Dense Coal"})
 let amethyst = new Ore("amethyst", 200, "denseStone")
+amethyst.particles = {frequency: 20, texture: "sparkle", speed: 3, lifetime: 20}
 denseStone.percentChunk = [percentsUsed[1], 100]
 
 let basalt = new Ore("basalt", 1, "basalt")
@@ -418,9 +562,11 @@ for (let i of layers) {
 
 voidOre.texture = voidTextures[0]
 
-setInterval(tick, 10)
-setInterval(render, 16)
+setInterval(tick, 16)
 setInterval(generateSave, 10000)
+setInterval(() => {
+    deadIds = []
+}, 100) // setting it directly after no worky for some reason
 
 canvas.addEventListener("click", click) // spaghet
 document.addEventListener("keydown", (e) => {
