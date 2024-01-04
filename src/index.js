@@ -21,6 +21,7 @@ let invVisible = false
 let invScroll = 0
 let rarityColors = {"base": "#7f7f7f", "common": "#d9d9d9", "uncommon": "#93c47d", "rare": "#4a86e8", "epic": "#ffd966", "mythic": "#46bdc6", "unseen": "#9900ff", "beyond": "#000000"}
 let settingsVisible = false
+let creditsVisible = false
 let menuOpen = false
 let parsToLoad = ["placeholder", "char", "dust", "sparkle"]
 let parTextures = {}
@@ -29,11 +30,16 @@ let deadIds = []
 let parSum = 0
 let parTime = 0
 const dtrConstant = Math.PI / 180
+let soundOn = true
+let notinfo = []
 
 ctx.imageSmoothingEnabled = false
 
 let music = new Audio("./assets/audio/music.mp3")
 music.loop = true
+let epicSfx = new Audio("./assets/audio/epicSfx.mp3")
+let mythicSfx = new Audio("./assets/audio/mythicSfx.mp3")
+let unseenSfx = new Audio("./assets/audio/unseenSfx.mp3")
 
 function tick() {
     if (loadProg >= allOres.length + layerOres.length + buttons.length + parsToLoad.length && loaded == false) {
@@ -78,7 +84,7 @@ function render() {
         ctx.drawImage(i.tx, i.pos[0] - 4, i.pos[1] - 4, 8, 8)
         i.tick()
     })
-    buttons.filter((i) => {return !i.aboveMenu && !i.hidden}).forEach( (i) => {
+    buttons.filter((i) => {return !i.aboveMenu && !i.hidden && i.dependency()}).forEach( (i) => {
         ctx.beginPath()
         if (i.sidebar && invVisible) {
             ctx.drawImage(i.texture, i.pos[0] - 370, i.pos[1], i.size, i.size)
@@ -88,12 +94,20 @@ function render() {
         ctx.closePath()
     })
     if (debug) {
-        ctx.beginPath();
+        ctx.beginPath()
         ctx.font = "20px sans-serif"
         ctx.fillStyle = "#ffffff"
         ctx.fillText("Debug enabled", 10, 880)
         ctx.fillText("yOffset: " + yOffset, 10, 905)
         ctx.closePath();
+    }
+    if (notinfo[2] > 0) {
+        notinfo[2] -= 1
+        ctx.beginPath();
+        ctx.font = "bold 40px sans-serif"
+        ctx.fillStyle = notinfo[1]
+        ctx.fillText(notinfo[0], 40, 40)
+        ctx.closePath()
     }
     if (invVisible) {
         ctx.beginPath();
@@ -154,6 +168,38 @@ function render() {
         ctx.fillRect(0, 0, 1600, 920)
         ctx.closePath()
     }
+    if (creditsVisible) {
+        ctx.beginPath();
+        ctx.fillStyle = "#9966cc"
+        ctx.rect(480, 40, 640, 840)
+        ctx.fill()
+        ctx.closePath()
+
+        ctx.beginPath()
+        ctx.fillStyle = "#331144"
+        ctx.rect(500, 60, 600, 800)
+        ctx.fill()
+        ctx.closePath()
+
+        ctx.beginPath()
+        ctx.fillStyle = "#9966cc"
+        ctx.font = "50px sans-serif"
+        ctx.fillText("CREDITS", 680, 120)
+        ctx.closePath()
+
+        ctx.beginPath()
+        ctx.fillStyle = "#9966cc"
+        ctx.font = "20px sans-serif"
+        ctx.fillText(`This game was mostly coded by sc3d`, 520, 160)
+        ctx.fillText(`My friend made/revamped a lot of the textures`, 520, 190)
+        ctx.fillText(`Compound-codes did like nothing but he has permission so`, 520, 220)
+        ctx.fillText(`Music is Solar Fractals by Waterflame`, 520, 250)
+        ctx.fillText(`Inspired by REX: Reincarnated on Roblox`, 520, 280)
+        ctx.fillText(`Probably like 72 Stack Overflow devs`, 520, 310)
+        ctx.fillText(`This project does not use any JS libraries`, 520, 340)
+        ctx.fillText(`Shoutout to Tim-Berners Lee for inventing the Internet`, 520, 370)
+        ctx.closePath()
+    }
     if (settingsVisible) {
         ctx.beginPath();
         ctx.fillStyle = "#9966cc"
@@ -174,7 +220,7 @@ function render() {
         ctx.closePath()
     }
 
-    buttons.filter((i) => {return i.aboveMenu && !i.hidden}).forEach((i) => {
+    buttons.filter((i) => {return i.aboveMenu && !i.hidden && i.dependency()}).forEach((i) => {
         ctx.beginPath()
         if (i.sidebar && invVisible) {
             ctx.drawImage(i.texture, i.pos[0] - 370, i.pos[1], i.size, i.size)
@@ -212,6 +258,16 @@ function capitalizeFirstLetter(string) {
 function objMap(obj, func) {
     return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, func(v)]));
 } // thank you 49.2k rep stack overflow guy
+
+function playsfx() {
+    if (this.paused) {
+        this.play()
+    } else {
+        this.currentTime = 0
+    }
+}
+
+Audio.prototype.playsfx = playsfx
 
 // stack overflow is th​e best website for developers
 
@@ -266,10 +322,25 @@ function generateOre(x, y) {
         }
     }
     let oreExists = oreDisplays.find((i) => (i.pos[0] == newOre.pos[0] && i.pos[1] == newOre.pos[1] && i.yOffset == newOre.yOffset))
-    
+    let parent = oreDict[newOre.type]
+
     if (!oreExists && !(y <= 280 && yOffset == 0) && 0 <= x && x <= 1600) {
         oreDisplays.push(newOre)
+        if (parent.rarity >= 1000) {
+            if (parent.rarityLevel == "epic") {
+                epicSfx.playsfx()
+            }
+            if (parent.rarityLevel == "mythic") {
+                mythicSfx.playsfx()
+            }
+            if (parent.rarityLevel == "unseen") {
+                unseenSfx.playsfx()
+            }
+            let dispName = parent.properties?.display || capitalizeFirstLetter(parent.name)
+            notinfo = [`${parent.rarityLevel.toUpperCase()} ORE: ${dispName} has spawned! (1/${parent.rarity.toLocaleString()})`, parent.rarityColor, 300]
+        }
     }
+
 }
 
 function addOre(type, num) {
@@ -285,7 +356,7 @@ function addOre(type, num) {
 
 function click(e) {
     let clickPos = [e.layerX - 40, e.layerY - 40]
-    let foundButton = buttons.find((i) => ((i.pos[0] - (i.sidebar && invVisible ? 370 : 0)) <= clickPos[0] && (i.cornerPos[0] - (i.sidebar && invVisible ? 370 : 0)) >= clickPos[0] && i.pos[1] <= clickPos[1] && i.cornerPos[1] >= clickPos[1] && !buttons.hidden))
+    let foundButton = buttons.find((i) => (i.pos[0] - (i.sidebar && invVisible ? 370 : 0) <= clickPos[0] && (i.cornerPos[0] - (i.sidebar && invVisible ? 370 : 0)) >= clickPos[0] && i.pos[1] <= clickPos[1] && i.cornerPos[1] >= clickPos[1] && !i.hidden && i.dependency()))
     if (foundButton && (!menuOpen || foundButton.aboveMenu)) {
         console.log(foundButton)
         foundButton.func()
@@ -407,6 +478,7 @@ class Button {
         this.texture.onload = () => {loadProg += 1}
 
         this.hidden = false
+        this.dependency = () => {return true}
         buttons.push(this) 
     }
 }
@@ -549,9 +621,24 @@ magma.percentChunk = [percentsUsed[3], 100]
 // no.
 let inv = new Button("inv", [1525, 10], 64, 32, () => {invVisible = !invVisible})
 let save = new Button("save", [1525, 85], 64, 32, generateSave)
-let settings = new Button("settings", [1525, 160], 64, 32, () => {settingsVisible = true; menuOpen = true; closeSettings.hidden = false}, true, false)
-let closeSettings = new Button("closeSettings", [1025, 70], 64, 32, () => {settingsVisible = false; menuOpen = false; closeSettings.hidden = true}, false, true)
-closeSettings.hidden = true
+
+let settings = new Button("settings", [1525, 160], 64, 32, () => {settingsVisible = true; menuOpen = true})
+let closeSettings = new Button("closeSettings", [1025, 70], 64, 32, () => {settingsVisible = false; menuOpen = false}, false, true)
+closeSettings.dependency = () => {return settingsVisible}
+
+let musicOnBtn = new Button("musicOn", [550, 160], 128, 32, () => {music.playbackRate = 0}, false, true)
+musicOnBtn.dependency = () => {return music.playbackRate && settingsVisible}
+let musicOff = new Button("musicOff", [550, 160], 128, 32, () => {music.playbackRate = 1}, false, true)
+musicOff.dependency = () => {return !music.playbackRate && settingsVisible}
+
+let soundOnBtn = new Button("soundOn", [925, 160], 128, 32, () => {soundOn = !soundOn}, false, true)
+soundOnBtn.dependency = () => {return soundOn && settingsVisible}
+let soundOff = new Button("soundOff", [925, 160], 128, 32, () => {soundOn = !soundOn}, false, true)
+soundOff.dependency = () => {return !soundOn && settingsVisible}
+
+let credits = new Button("credits", [1525, 235], 64, 32, () => {creditsVisible = true; menuOpen = true; closeCredits.hidden = false})
+let closeCredits = new Button("closeCredits", [1025, 70], 64, 32, () => {creditsVisible = false; menuOpen = false; closeCredits.hidden = true}, false, true)
+closeCredits.dependency = () => {return creditsVisible}
 
 for (let i of layers) {
     let tx = new Image(16, 16)
