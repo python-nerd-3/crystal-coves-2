@@ -32,6 +32,8 @@ let parTime = 0
 const dtrConstant = Math.PI / 180
 let soundOn = true
 let notinfo = []
+let rarityMults = {"base": 0, "common": 1, "uncommon": 1.2, "rare": 1.5, "epic": 2, "mythic": 3, "unseen": 5, "beyond": 10}
+let money = 0
 
 ctx.imageSmoothingEnabled = false
 
@@ -126,20 +128,20 @@ function render() {
         ctx.font = "20px sans-serif"
         ctx.fillStyle == "#9966cc"
 
-        discoveredOres.forEach((i) => {
-            ctx.drawImage(i.texture, 1300, 80 + (discoveredOres.indexOf(i) * 100) + invScroll, 60, 60)
+        discoveredOres.forEach((i, ind) => {
+            ctx.drawImage(i.texture, 1300, 80 + (ind * 100) + invScroll, 60, 60)
             ctx.fillText(i.properties?.display || capitalizeFirstLetter(i.name), 1370, 100 + (discoveredOres.indexOf(i) * 100) + invScroll)
             if (i.rarity == 0) {
-                ctx.fillText("Misc", 1370, 120 + (discoveredOres.indexOf(i) * 100) + invScroll)
+                ctx.fillText("Misc", 1370, 120 + (ind * 100) + invScroll)
             } else if (i.rarity == 1) {
-                ctx.fillText("Layer ore", 1370, 120 + (discoveredOres.indexOf(i) * 100) + invScroll)
+                ctx.fillText("Layer ore", 1370, 120 + (ind * 100) + invScroll)
             } else {
-                ctx.fillText("1/" + i.rarity.toLocaleString(), 1370, 120 + (discoveredOres.indexOf(i) * 100) + invScroll);
+                ctx.fillText("1/" + i.rarity.toLocaleString() + " | $" + i.sellPrice.toLocaleString(), 1370, 120 + (ind * 100) + invScroll );
             }
-            ctx.fillText(i.amt.toLocaleString(), 1370, 140 + (discoveredOres.indexOf(i) * 100) + invScroll);
+            ctx.fillText(i.amt.toLocaleString(), 1370, 140 + (ind * 100) + invScroll);
             ctx.strokeStyle = i.rarityColor
             ctx.lineWidth = 5
-            ctx.strokeRect(1297.5, 77.5 + (discoveredOres.indexOf(i) * 100) + invScroll, 62.5, 62.5);
+            ctx.strokeRect(1297.5, 77.5 + (ind * 100) + invScroll, 62.5, 62.5);
         })
 
         ctx.closePath();
@@ -160,6 +162,12 @@ function render() {
         ctx.font = "30px sans-serif"
         ctx.fillText("INVENTORY", 1335, 50)
         ctx.closePath();
+
+        ctx.beginPath();
+        ctx.font = "20px sans-serif"
+        ctx.fillText("Right click to sell", 1295, discoveredOres.length * 100 + 80 + invScroll)
+        ctx.fillText("Sell: ", 1295, discoveredOres.length * 100 + 110 + invScroll)
+        ctx.closePath()
         
     }
     if (menuOpen) {
@@ -327,13 +335,13 @@ function generateOre(x, y) {
     if (!oreExists && !(y <= 280 && yOffset == 0) && 0 <= x && x <= 1600) {
         oreDisplays.push(newOre)
         if (parent.rarity >= 1000) {
-            if (parent.rarityLevel == "epic") {
+            if (parent.rarityLevel == "epic" && soundOn) {
                 epicSfx.playsfx()
             }
-            if (parent.rarityLevel == "mythic") {
+            if (parent.rarityLevel == "mythic" && soundOn) {
                 mythicSfx.playsfx()
             }
-            if (parent.rarityLevel == "unseen") {
+            if (parent.rarityLevel == "unseen" && soundOn) {
                 unseenSfx.playsfx()
             }
             let dispName = parent.properties?.display || capitalizeFirstLetter(parent.name)
@@ -355,6 +363,7 @@ function addOre(type, num) {
 }
 
 function click(e) {
+    console.log(e)
     let clickPos = [e.layerX - 40, e.layerY - 40]
     let foundButton = buttons.find((i) => (i.pos[0] - (i.sidebar && invVisible ? 370 : 0) <= clickPos[0] && (i.cornerPos[0] - (i.sidebar && invVisible ? 370 : 0)) >= clickPos[0] && i.pos[1] <= clickPos[1] && i.cornerPos[1] >= clickPos[1] && !i.hidden && i.dependency()))
     if (foundButton && (!menuOpen || foundButton.aboveMenu)) {
@@ -368,6 +377,19 @@ function click(e) {
             destroy(foundOre)
         }
     }
+}
+
+function rclick(e) {
+    let clickPos = [e.layerX - 40, e.layerY - 40]
+    let tp = (a) => {return a * 100 + invScroll + 80}
+    if (invVisible) {
+        let foundOre = discoveredOres.find((i, ind) => {return (1300 <= clickPos[0] && clickPos[0] <= 1360 && tp(ind) <= clickPos[1] && clickPos[1] <= tp(ind) + 60)})
+        if (foundOre.amt >= 1) {
+            foundOre.amt -= 1
+            money += foundOre.sellPrice
+        }        
+    }
+    e.preventDefault()
 }
 
 function select(list) {
@@ -435,6 +457,7 @@ class Ore {
 
         this.rarityLevel = rarity >= 2 ? rarity >= 75 ? rarity >= 250 ? rarity >= 1000 ? rarity >= 7500 ? rarity >= 25000 ? rarity >= 125000 ? "beyond" : "unseen" : "mythic" : "epic" : "rare" : "uncommon" : "common" : "base"
         this.rarityColor = rarityColors[this.rarityLevel]
+        this.sellPrice = ~~(this.rarity * rarityMults[this.rarityLevel])
         
         this.particles = null
 
@@ -636,8 +659,8 @@ soundOnBtn.dependency = () => {return soundOn && settingsVisible}
 let soundOff = new Button("soundOff", [925, 160], 128, 32, () => {soundOn = !soundOn}, false, true)
 soundOff.dependency = () => {return !soundOn && settingsVisible}
 
-let credits = new Button("credits", [1525, 235], 64, 32, () => {creditsVisible = true; menuOpen = true; closeCredits.hidden = false})
-let closeCredits = new Button("closeCredits", [1025, 70], 64, 32, () => {creditsVisible = false; menuOpen = false; closeCredits.hidden = true}, false, true)
+let credits = new Button("credits", [1525, 235], 64, 32, () => {creditsVisible = true; menuOpen = true})
+let closeCredits = new Button("closeCredits", [1025, 70], 64, 32, () => {creditsVisible = false; menuOpen = false}, false, true)
 closeCredits.dependency = () => {return creditsVisible}
 
 for (let i of layers) {
@@ -656,6 +679,7 @@ setInterval(() => {
 }, 100) // setting it directly after no worky for some reason
 
 canvas.addEventListener("click", click) // spaghet
+canvas.addEventListener("contextmenu", rclick)
 document.addEventListener("keydown", (e) => {
     if (e.key == "ArrowDown" && yOffset < 36800) {
         yOffset += 920
@@ -677,7 +701,6 @@ document.addEventListener("keydown", (e) => {
     }
 })
 canvas.addEventListener("wheel", (e) => {
-    console.log(invScroll)
     if (invVisible) {
         invScroll += e.wheelDeltaY / 2.5
         invScroll = Math.min(invScroll, 0)
