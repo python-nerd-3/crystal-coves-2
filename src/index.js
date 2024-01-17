@@ -32,8 +32,11 @@ let parTime = 0
 const dtrConstant = Math.PI / 180
 let soundOn = true
 let notinfo = []
-let rarityMults = {"base": 0, "common": 1, "uncommon": 1.2, "rare": 1.5, "epic": 2, "mythic": 3, "unseen": 5, "beyond": 10}
+let rarityMults = {"base": 0, "common": 1, "uncommon": 1.2, "rare": 1.5, "epic": 2, "mythic": 3, "unseen": 10, "beyond": 20}
 let money = 0
+let sellAmt = 1
+let shopVisible = 0 * !"Is this the egg?"
+let items = []
 
 ctx.imageSmoothingEnabled = false
 
@@ -44,7 +47,7 @@ let mythicSfx = new Audio("./assets/audio/mythicSfx.mp3")
 let unseenSfx = new Audio("./assets/audio/unseenSfx.mp3")
 
 function tick() {
-    if (loadProg >= allOres.length + layerOres.length + buttons.length + parsToLoad.length && loaded == false) {
+    if (loadProg >= allOres.length + layerOres.length + buttons.length + parsToLoad.length + items.length && loaded == false) {
         console.log("Loaded textures in " + performance.now() + "ms")
         loaded = true
         startGame()
@@ -228,6 +231,38 @@ function render() {
         ctx.closePath()
     }
 
+    if (shopVisible) {
+        ctx.beginPath();
+        ctx.fillStyle = "#9966cc"
+        ctx.rect(280, 40, 1040, 840)
+        ctx.fill()
+        ctx.closePath()
+
+        ctx.beginPath()
+        ctx.fillStyle = "#331144"
+        ctx.rect(300, 60, 1000, 800)
+        ctx.fill()
+        ctx.closePath()
+
+        ctx.beginPath()
+        ctx.fillStyle = "#9966cc"
+        ctx.font = "60px sans-serif"
+        ctx.fillText("SHOP", 715, 130)
+        ctx.closePath()
+
+        ctx.beginPath()
+        ctx.drawImage(dynamite.tx, 320, 200, 128, 128)
+        ctx.fillStyle = "#9966cc"
+        ctx.font = "40px sans-serif"
+        ctx.fillText("Dynamite - $50", 448, 240) // 800th line of code
+        ctx.font = "24px sans-serif"
+        ctx.fillText("Blows up a small area collecting any materials in its way, doubling", 448, 270)
+        ctx.fillText("gain from common resources. As a wise penguin once said,", 448, 304)
+        ctx.fillText("\"Yes Rico, kaboom.\"", 448, 338)
+
+        ctx.closePath()
+    }
+
     buttons.filter((i) => {return i.aboveMenu && !i.hidden && i.dependency()}).forEach((i) => {
         ctx.beginPath()
         if (i.sidebar && invVisible) {
@@ -363,7 +398,6 @@ function addOre(type, num) {
 }
 
 function click(e) {
-    console.log(e)
     let clickPos = [e.layerX - 40, e.layerY - 40]
     let foundButton = buttons.find((i) => (i.pos[0] - (i.sidebar && invVisible ? 370 : 0) <= clickPos[0] && (i.cornerPos[0] - (i.sidebar && invVisible ? 370 : 0)) >= clickPos[0] && i.pos[1] <= clickPos[1] && i.cornerPos[1] >= clickPos[1] && !i.hidden && i.dependency()))
     if (foundButton && (!menuOpen || foundButton.aboveMenu)) {
@@ -384,10 +418,17 @@ function rclick(e) {
     let tp = (a) => {return a * 100 + invScroll + 80}
     if (invVisible) {
         let foundOre = discoveredOres.find((i, ind) => {return (1300 <= clickPos[0] && clickPos[0] <= 1360 && tp(ind) <= clickPos[1] && clickPos[1] <= tp(ind) + 60)})
-        if (foundOre.amt >= 1) {
-            foundOre.amt -= 1
-            money += foundOre.sellPrice
-        }        
+        if (foundOre) {
+            if (sellAmt == "max" && foundOre.sellPrice != 0) {
+                money += foundOre.amt * foundOre.sellPrice
+                foundOre.amt = 0
+            } else {
+                if (foundOre.amt >= sellAmt && foundOre.sellPrice != 0) {
+                    foundOre.amt -= sellAmt
+                    money += foundOre.sellPrice * sellAmt
+                }
+            }  
+        }      
     }
     e.preventDefault()
 }
@@ -406,10 +447,11 @@ function selectEven(list) {
 }
 
 // one of these comments has a zero width space you will never know which one haha
+// its not the one above me OR this one i swear to giggles
 
 function generateSave() {
     let oreSave = objMap(oreDict, (i) => {return [!i.discovered, (i.amt * (i.name.charCodeAt(0) - 96))]})
-    let save = {ores: oreSave}
+    let save = {"ores": oreSave, "money": money}
     let encryptedSave = btoa(JSON.stringify(save))
     localStorage.setItem("save", encryptedSave)
     // screwing around with this because sc3d said not to
@@ -433,6 +475,7 @@ function loadSave() {
             })
         }
     }
+    money = decryptedSave.money
 }
 
 class Ore {
@@ -506,11 +549,24 @@ class Button {
     }
 }
 
+class Item {
+    constructor(name) {
+        this.name = name
+        this.tx = new Image(16, 16)
+        this.tx.src = `assets/items/${name}.png`
+        this.tx.onload = () => {loadProg += 1}
+        this.tx.onerror = () => {console.log("oH NOes")}
+
+        items.push(this)
+    }
+}
+
 parsToLoad.forEach((i) => {
     img = new Image(8, 8)
     img.src = `assets/particles/${i}.png`
     img.onload = () => {loadProg += 1}
     parTextures[i] = img // would use map but no worky
+
 })
 
 class Particle {
@@ -618,10 +674,11 @@ let iron = new Ore("iron", 20, "stone")
 let coal = new Ore("coal", 25, "stone")
 let quartz = new Ore("quartz", 30, "stone")
 let pyrite = new Ore("pyrite", 80, "stone")
+let bronzeRelic = new Ore("bronzeRelic", 400, "stone", {"display": "Bronze Relic"})
 let gold = new Ore("gold", 650, "stone")
 gold.particles = {frequency: 8, texture: "sparkle", speed: 3, lifetime: 20}
 let roseGold = new Ore("roseGold", 1111, "stone", {"display": "Rose Gold"})
-roseGold.particles = {frequency: 8, texture: "sparkle", speed: 3, lifetime: 20}
+roseGold.particles = {frequency: 7, texture: "sparkle", speed: 3, lifetime: 25}
 
 let emerald = new Ore("emerald", 1500, "stone")
 stone.percentChunk = [percentsUsed[0], 100]
@@ -662,6 +719,33 @@ soundOff.dependency = () => {return !soundOn && settingsVisible}
 let credits = new Button("credits", [1525, 235], 64, 32, () => {creditsVisible = true; menuOpen = true})
 let closeCredits = new Button("closeCredits", [1025, 70], 64, 32, () => {creditsVisible = false; menuOpen = false}, false, true)
 closeCredits.dependency = () => {return creditsVisible}
+
+let sellOne = new Button("sellOne", [1340, 0], 32, 16, () => {sellAmt = 1}, false, true)
+sellOne.dependency = sellDependency(sellOne, 1)
+let sellTen = new Button("sellTen", [1380, 0], 32, 16, () => {sellAmt = 10}, false, true)
+sellTen.dependency = sellDependency(sellTen, 10)
+let sellMax = new Button("sellMax", [1420, 0], 32, 16, () => {sellAmt = "max"}, false, true)
+sellMax.dependency = sellDependency(sellMax, "max")
+
+let shop = new Button("shop", [1525, 310], 64, 32, () => {shopVisible = true, menuOpen = true}, true, false)
+let closeShop = new Button("closeShop", [1225, 70], 64, 32, () => {shopVisible = false, menuOpen = false}, false, true)
+closeShop.dependency = () => {return shopVisible}
+
+let dynamite = new Item("dynamite")
+
+function sellDependency(button, amt) {
+    return () => { // functions returning functions which return wowie
+        button.pos[1] = discoveredOres.length * 100 + 90 + invScroll
+        button.cornerPos[1] = discoveredOres.length * 100 + 122 + invScroll
+        if (sellAmt == amt && invVisible) {
+            ctx.beginPath()
+            ctx.strokeStyle = "#ffffff"
+            ctx.strokeRect(button.pos[0], button.pos[1], 32, 32)
+            ctx.closePath()
+        }
+        return invVisible
+    }
+}
 
 for (let i of layers) {
     let tx = new Image(16, 16)
