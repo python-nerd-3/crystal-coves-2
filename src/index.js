@@ -37,6 +37,8 @@ let money = 0
 let sellAmt = 1
 let shopVisible = 0 * !"Is this the egg?"
 let items = []
+let itemDict = {}
+let hotbarLoc = false
 
 ctx.imageSmoothingEnabled = false
 
@@ -71,6 +73,11 @@ function render() {
     }
     ctx.fillStyle = `rgba(0,0,0,${yOffset / (layers.length * 9200 * 2)}`
     ctx.fillRect(0, 0, 1600, 920)
+    ctx.beginPath()
+    ctx.fillStyle = "#00ff7f"
+    ctx.font = "30px sans-serif"
+    ctx.fillText(`$${money.toLocaleString()}`, 15, 45)
+    ctx.closePath()
     oreDisplays.filter((i) => (i.yOffset == yOffset)).forEach((i) => {
         ctx.beginPath()
         ctx.drawImage(i.texture, i.pos[0], i.pos[1], 40, 40)
@@ -105,6 +112,20 @@ function render() {
         ctx.fillText("Debug enabled", 10, 880)
         ctx.fillText("yOffset: " + yOffset, 10, 905)
         ctx.closePath();
+    }
+    if (hotbarLoc) {
+        ctx.beginPath()
+        let hotbarLeft = hotbarLoc[0] - (items.length * 24) + 20
+        for (i of items) {
+            ctx.fillStyle = "rgba(0.7,0.7,0.7,0.5)" 
+            ctx.fillRect(hotbarLeft, hotbarLoc[1] + 48, 48, 48)
+            ctx.drawImage(i.tx, hotbarLeft, hotbarLoc[1] + 48, 48, 48)
+            ctx.fillStyle = "#ffffff"
+            ctx.font = "16px sans-serif"
+            ctx.fillText(i.amt, hotbarLeft, hotbarLoc[1] + 96, 48, 48)
+            hotbarLeft += 48
+        }
+        ctx.closePath()
     }
     if (notinfo[2] > 0) {
         notinfo[2] -= 1
@@ -230,7 +251,6 @@ function render() {
         ctx.fillText("SETTINGS", 670, 120)
         ctx.closePath()
     }
-
     if (shopVisible) {
         ctx.beginPath();
         ctx.fillStyle = "#9966cc"
@@ -262,6 +282,7 @@ function render() {
 
         ctx.closePath()
     }
+
 
     buttons.filter((i) => {return i.aboveMenu && !i.hidden && i.dependency()}).forEach((i) => {
         ctx.beginPath()
@@ -386,6 +407,15 @@ function generateOre(x, y) {
 
 }
 
+function buy(item) {
+    if (money > itemDict[item].price) {
+        itemDict[item].amt += 1
+        money -= itemDict[item].price
+    } else {
+        console.log("not enuff")
+    }
+}
+
 function addOre(type, num) {
     type.amt += num
     type.discovered = true
@@ -414,9 +444,10 @@ function click(e) {
 }
 
 function rclick(e) {
+    e.preventDefault()
     let clickPos = [e.layerX - 40, e.layerY - 40]
     let tp = (a) => {return a * 100 + invScroll + 80}
-    if (invVisible) {
+    if (invVisible && !menuOpen) {
         let foundOre = discoveredOres.find((i, ind) => {return (1300 <= clickPos[0] && clickPos[0] <= 1360 && tp(ind) <= clickPos[1] && clickPos[1] <= tp(ind) + 60)})
         if (foundOre) {
             if (sellAmt == "max" && foundOre.sellPrice != 0) {
@@ -429,6 +460,16 @@ function rclick(e) {
                 }
             }  
         }      
+    }
+    if (!menuOpen) {
+        let foundOre = oreDisplays.find((i) => (i.pos[0] <= clickPos[0] && i.cornerPos[0] >= clickPos[0] && i.pos[1] <= clickPos[1] && i.cornerPos[1] >= clickPos[1] && i.type != "voidOre" && i.yOffset == yOffset))
+        if (foundOre) {
+            if (!hotbarLoc) {
+                hotbarLoc = foundOre.pos
+            } else {
+                hotbarLoc = false
+            }
+        }
     }
     e.preventDefault()
 }
@@ -451,7 +492,8 @@ function selectEven(list) {
 
 function generateSave() {
     let oreSave = objMap(oreDict, (i) => {return [!i.discovered, (i.amt * (i.name.charCodeAt(0) - 96))]})
-    let save = {"ores": oreSave, "money": money}
+    let itemSave = objMap(itemDict, (i) => {return i.amt * (i.name.charCodeAt(0) - 96)})
+    let save = {"ores": oreSave, "money": money, "items": itemSave}
     let encryptedSave = btoa(JSON.stringify(save))
     localStorage.setItem("save", encryptedSave)
     // screwing around with this because sc3d said not to
@@ -476,6 +518,14 @@ function loadSave() {
         }
     }
     money = decryptedSave.money
+    console.log(decryptedSave.items)
+    for (let i in decryptedSave.items) {
+        itemDict[i].amt = decryptedSave.items[i] / (itemDict[i].name.charCodeAt(0) - 96)
+        if (~~(itemDict[i].amt) != itemDict[i].amt) {
+            localStorage.removeItem("save")
+            window.write("rip bozo 💀💀💀💀")
+        }
+    }
 }
 
 class Ore {
@@ -550,14 +600,16 @@ class Button {
 }
 
 class Item {
-    constructor(name) {
+    constructor(name, price = 0) {
         this.name = name
+        this.price = price
         this.tx = new Image(16, 16)
         this.tx.src = `assets/items/${name}.png`
         this.tx.onload = () => {loadProg += 1}
-        this.tx.onerror = () => {console.log("oH NOes")}
+        this.amt = 0
 
         items.push(this)
+        itemDict[name] = this
     }
 }
 
@@ -730,8 +782,10 @@ sellMax.dependency = sellDependency(sellMax, "max")
 let shop = new Button("shop", [1525, 310], 64, 32, () => {shopVisible = true, menuOpen = true}, true, false)
 let closeShop = new Button("closeShop", [1225, 70], 64, 32, () => {shopVisible = false, menuOpen = false}, false, true)
 closeShop.dependency = () => {return shopVisible}
+let buyDynamite = new Button("buyDynamite", [320, 200], 32, 16, () => {buy("dynamite")}, false, true)
+buyDynamite.dependency = () => {return shopVisible}
 
-let dynamite = new Item("dynamite")
+let dynamite = new Item("dynamite", 50)
 
 function sellDependency(button, amt) {
     return () => { // functions returning functions which return wowie
