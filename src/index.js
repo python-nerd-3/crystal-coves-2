@@ -23,7 +23,7 @@ let rarityColors = {"base": "#7f7f7f", "common": "#d9d9d9", "uncommon": "#93c47d
 let settingsVisible = false
 let creditsVisible = false
 let menuOpen = false
-let parsToLoad = ["placeholder", "char", "dust", "sparkle"]
+let parsToLoad = ["placeholder", "char", "dust", "sparkle", "stoneShard"]
 let parTextures = {}
 let particles = []
 let deadIds = []
@@ -47,6 +47,8 @@ music.loop = true
 let epicSfx = new Audio("./assets/audio/epicSfx.mp3")
 let mythicSfx = new Audio("./assets/audio/mythicSfx.mp3")
 let unseenSfx = new Audio("./assets/audio/unseenSfx.mp3")
+
+let dynamiteSfx = new Audio("./assets/audio/boom.mp3")
 
 function tick() {
     if (loadProg >= allOres.length + layerOres.length + buttons.length + parsToLoad.length + items.length && loaded == false) {
@@ -345,9 +347,13 @@ function startGame() {
     }
 }
 
-function destroy(target) {
-    console.log(target.type)
-    addOre(oreDict[target.type], target.deposit ? selectEven([5, 6, 7]) : 1)
+function destroy(target, src = "default") {
+    console.log(src)
+    let dynaplier = src == "dynamite" && (oreDict[target.type].rarityLevel == "common" || oreDict[target.type].rarityLevel == "base") ? 2 : 1
+    addOre(oreDict[target.type], target.deposit ? selectEven([5, 6, 7]) * dynaplier : dynaplier)
+    // for (let i of Array(3).keys()) {
+    //     new Particle("stoneShard", "gravity", "yOffset", target.pos[0] + 20, target.pos[1], (Math.random() - 0.5) * 20, (Math.random() * 5) + 5, 2)
+    // } delayed 
     if (target.spawn) {
         oreDisplays.splice(oreDisplays.indexOf(target), 1, new OreDisplay(voidOre, target.pos[0], target.pos[1], true))
         generateOre(target.pos[0] - 40, target.pos[1])
@@ -429,6 +435,17 @@ function addOre(type, num) {
 
 function click(e) {
     let clickPos = [e.layerX - 40, e.layerY - 40]
+    if (hotbarLoc) {
+        let hotbarLeft = hotbarLoc[0] - (items.length * 24) + 20
+        let foundItem = items.find((i, index) => {
+            return hotbarLeft + (index) * 48 <= clickPos[0] && clickPos[0] <= hotbarLeft + (index + 1) * 48 && hotbarLoc[1] + 48 <= clickPos[1] &&  clickPos[1] <= hotbarLoc[1] + 96
+        })
+        if (foundItem && foundItem.amt >= 1) {
+            foundItem.use()
+            hotbarLoc = false
+            return
+        }
+    }
     let foundButton = buttons.find((i) => (i.pos[0] - (i.sidebar && invVisible ? 370 : 0) <= clickPos[0] && (i.cornerPos[0] - (i.sidebar && invVisible ? 370 : 0)) >= clickPos[0] && i.pos[1] <= clickPos[1] && i.cornerPos[1] >= clickPos[1] && !i.hidden && i.dependency()))
     if (foundButton && (!menuOpen || foundButton.aboveMenu)) {
         console.log(foundButton)
@@ -600,9 +617,11 @@ class Button {
 }
 
 class Item {
-    constructor(name, price = 0) {
+    constructor(name, price, use) {
         this.name = name
         this.price = price
+        this.use = use
+
         this.tx = new Image(16, 16)
         this.tx.src = `assets/items/${name}.png`
         this.tx.onload = () => {loadProg += 1}
@@ -731,8 +750,10 @@ let gold = new Ore("gold", 650, "stone")
 gold.particles = {frequency: 8, texture: "sparkle", speed: 3, lifetime: 20}
 let roseGold = new Ore("roseGold", 1111, "stone", {"display": "Rose Gold"})
 roseGold.particles = {frequency: 7, texture: "sparkle", speed: 3, lifetime: 25}
-
 let emerald = new Ore("emerald", 1500, "stone")
+let vyvyxyn = new Ore("vyvyxyn", 3333, "stone")
+vyvyxyn.particles = {frequency: 2, texture: "sparkle", speed: 2, lifetime: 40}
+let crystalResonance = new Ore("crystalResonance", 30000, "stone", {"display": "Crystal of Resonance"})
 stone.percentChunk = [percentsUsed[0], 100]
 
 let denseStone = new Ore("denseStone", 1, "denseStone", {"display": "Dense Stone"})
@@ -740,6 +761,10 @@ let denseIron = new Ore("denseIron", 20, "denseStone", {"display": "Dense Iron"}
 let denseCoal = new Ore("denseCoal", 20, "denseStone", {"display": "Dense Coal"})
 let amethyst = new Ore("amethyst", 200, "denseStone")
 amethyst.particles = {frequency: 20, texture: "sparkle", speed: 3, lifetime: 20}
+let diamond = new Ore("diamond", 1000, "denseStone", )
+diamond.particles = {frequency: 5, texture: "sparkle", speed: 4, lifetime: 30}
+let blackDiamond = new Ore("blackDiamond", 5000, "denseStone", {"display": "Black Diamond"})
+blackDiamond.particles = {frequency: 3, texture: "sparkle", speed: 3, lifetime: 35}
 denseStone.percentChunk = [percentsUsed[1], 100]
 
 let basalt = new Ore("basalt", 1, "basalt")
@@ -785,7 +810,17 @@ closeShop.dependency = () => {return shopVisible}
 let buyDynamite = new Button("buyDynamite", [320, 200], 32, 16, () => {buy("dynamite")}, false, true)
 buyDynamite.dependency = () => {return shopVisible}
 
-let dynamite = new Item("dynamite", 50)
+let dynamite = new Item("dynamite", 50, dynamiteUse)
+function dynamiteUse() {
+    for (i of dynamitePattern) {
+        foundOre = oreDisplays.filter(j => j.yOffset == yOffset && j.type != voidOre).find((j) => {return j.pos[0] == i[0] + hotbarLoc[0] && j.pos[1] == i[1] + hotbarLoc[1]})
+        if (foundOre) {
+            destroy(foundOre, "dynamite")
+        }
+    }
+    dynamiteSfx.playsfx()
+    dynamite.amt -= 1
+}
 
 function sellDependency(button, amt) {
     return () => { // functions returning functions which return wowie
