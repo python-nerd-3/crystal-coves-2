@@ -50,6 +50,10 @@ let unseenSfx = new Audio("./assets/audio/unseenSfx.mp3")
 
 let dynamiteSfx = new Audio("./assets/audio/boom.mp3")
 
+let breakSfx = new Audio("./assets/audio/break.mp3")
+breakSfx.volume = 0.1
+let depositSfx = new Audio("./assets/audio/deposit.mp3")
+
 function tick() {
     if (loadProg >= allOres.length + layerOres.length + buttons.length + parsToLoad.length + items.length && loaded == false) {
         console.log("Loaded textures in " + performance.now() + "ms")
@@ -75,11 +79,6 @@ function render() {
     }
     ctx.fillStyle = `rgba(0,0,0,${yOffset / (layers.length * 9200 * 2)}`
     ctx.fillRect(0, 0, 1600, 920)
-    ctx.beginPath()
-    ctx.fillStyle = "#00ff7f"
-    ctx.font = "30px sans-serif"
-    ctx.fillText(`$${money.toLocaleString()}`, 15, 45)
-    ctx.closePath()
     oreDisplays.filter((i) => (i.yOffset == yOffset)).forEach((i) => {
         ctx.beginPath()
         ctx.drawImage(i.texture, i.pos[0], i.pos[1], 40, 40)
@@ -134,7 +133,13 @@ function render() {
         ctx.beginPath();
         ctx.font = "bold 40px sans-serif"
         ctx.fillStyle = notinfo[1]
-        ctx.fillText(notinfo[0], 40, 40)
+        ctx.fillText(notinfo[0], 15, 45)
+        ctx.closePath()
+    } else {
+        ctx.beginPath()
+        ctx.fillStyle = "#00ff7f"
+        ctx.font = "30px sans-serif"
+        ctx.fillText(`$${money.toLocaleString()}`, 15, 45)
         ctx.closePath()
     }
     if (invVisible) {
@@ -217,7 +222,7 @@ function render() {
 
         ctx.beginPath()
         ctx.fillStyle = "#9966cc"
-        ctx.font = "50px sans-serif"
+        ctx.font = "bold 50px sans-serif"
         ctx.fillText("CREDITS", 680, 120)
         ctx.closePath()
 
@@ -249,7 +254,7 @@ function render() {
 
         ctx.beginPath()
         ctx.fillStyle = "#9966cc"
-        ctx.font = "50px sans-serif"
+        ctx.font = "bold 50px sans-serif"
         ctx.fillText("SETTINGS", 670, 120)
         ctx.closePath()
     }
@@ -268,7 +273,7 @@ function render() {
 
         ctx.beginPath()
         ctx.fillStyle = "#9966cc"
-        ctx.font = "60px sans-serif"
+        ctx.font = "bold 60px sans-serif"
         ctx.fillText("SHOP", 715, 130)
         ctx.closePath()
 
@@ -276,15 +281,41 @@ function render() {
         ctx.drawImage(dynamite.tx, 320, 200, 128, 128)
         ctx.fillStyle = "#9966cc"
         ctx.font = "40px sans-serif"
-        ctx.fillText("Dynamite - $50", 448, 240) // 800th line of code
+        ctx.fillText("Dynamite - $60", 448, 240) // 800th line of code
         ctx.font = "24px sans-serif"
         ctx.fillText("Blows up a small area collecting any materials in its way, doubling", 448, 270)
         ctx.fillText("gain from common resources. As a wise penguin once said,", 448, 304)
         ctx.fillText("\"Yes Rico, kaboom.\"", 448, 338)
+        ctx.closePath()
 
+        // ctx.beginPath()
+        // ctx.drawImage(tunnelBore.tx, 320, 388, 128, 128)
+        // ctx.fillStyle = "#9966cc"
+        // ctx.font = "40px sans-serif"
+        // ctx.fillText("Tunnel Bore - $1,000", 448, 428) // 800thn't line of code
+        // ctx.font = "24px sans-serif"
+        // ctx.fillText("Digs down 5 layers quickly. ", 448, 458)
+        // ctx.font = "14px sans-serif"
+        // ctx.fillText("that's all, what else do you want?", 448, 475)
+        // ctx.fillText("something funny? do you really expect that from me?", 448, 487)
+        // ctx.fillText("fine, what did the football coach say to the broken vending machine?", 448, 499)
+        // ctx.fillText("give me my quarter back", 448, 511)
+        // ctx.font = "bold 14px sans-serif"
+        // ctx.fillText("AHAHAHAHAH", 607, 511)
+        // ctx.closePath()
+        // delayed due to many bugs
+
+        ctx.beginPath()
+        ctx.drawImage(dynamite.tx, 320, 388, 128, 128)
+        ctx.fillStyle = "#9966cc"
+        ctx.font = "40px sans-serif"
+        ctx.fillText("Remote Air Bubble - $300", 448, 428) // 800thn'tn'tn't line of code
+        ctx.font = "24px sans-serif"
+        ctx.fillText("Creates a small bubble of air on the layer below you. Ores adjacent", 448, 458)
+        ctx.fillText("to the bubble will become pumice. You must pronounce it \"poomis\"", 448, 492)
+        ctx.fillText("by law.", 448, 526)
         ctx.closePath()
     }
-
 
     buttons.filter((i) => {return i.aboveMenu && !i.hidden && i.dependency()}).forEach((i) => {
         ctx.beginPath()
@@ -348,7 +379,6 @@ function startGame() {
 }
 
 function destroy(target, src = "default") {
-    console.log(src)
     let dynaplier = src == "dynamite" && (oreDict[target.type].rarityLevel == "common" || oreDict[target.type].rarityLevel == "base") ? 2 : 1
     addOre(oreDict[target.type], target.deposit ? selectEven([5, 6, 7]) * dynaplier : dynaplier)
     // for (let i of Array(3).keys()) {
@@ -356,10 +386,10 @@ function destroy(target, src = "default") {
     // } delayed 
     if (target.spawn) {
         oreDisplays.splice(oreDisplays.indexOf(target), 1, new OreDisplay(voidOre, target.pos[0], target.pos[1], true))
-        generateOre(target.pos[0] - 40, target.pos[1])
-        generateOre(target.pos[0] + 40, target.pos[1])
-        generateOre(target.pos[0], target.pos[1] - 40)
-        generateOre(target.pos[0], target.pos[1] + 40)
+        generateOre(target.pos[0] - 40, target.pos[1], target.yOffset)
+        generateOre(target.pos[0] + 40, target.pos[1], target.yOffset)
+        generateOre(target.pos[0], target.pos[1] - 40, target.yOffset)
+        generateOre(target.pos[0], target.pos[1] + 40, target.yOffset)
     } else {
         oreDisplays.splice(oreDisplays.indexOf(target), 1)
     }
@@ -368,10 +398,11 @@ function destroy(target, src = "default") {
     }
 }
 
-function generateOre(x, y) {
-    let currentLayer = ~~(yOffset / 9200)
-    let newOre = new OreDisplay(select(layerOres[currentLayer]), x, y, true)
+function generateOre(x, y, yOff = yOffset) {
+    let currentLayer = ~~(yOff / 9200)
+    let newOre = new OreDisplay(select(layerOres[currentLayer]), x, y, true, yOff)
     if (newOre.pos[1] == 920) {
+        console.log("you")
         newOre.yOffset = newOre.literalY
         newOre.pos[1] = 0
         newOre.cornerPos[1] = 40 
@@ -407,7 +438,7 @@ function generateOre(x, y) {
                 unseenSfx.playsfx()
             }
             let dispName = parent.properties?.display || capitalizeFirstLetter(parent.name)
-            notinfo = [`${parent.rarityLevel.toUpperCase()} ORE: ${dispName} has spawned! (1/${parent.rarity.toLocaleString()})`, parent.rarityColor, 300]
+            notinfo = [`${parent.rarityLevel.toUpperCase()} ORE: ${dispName}${newOre.deposit ? " Deposit" : ""} has spawned!${newOre.deposit ? "!" : ""}${newOre.rarityLevel == "unseen" ? "!" : ""} (1/${parent.rarity.toLocaleString()})`, parent.rarityColor, 300]
         }
     }
 
@@ -455,6 +486,9 @@ function click(e) {
     if (!menuOpen) {
         let foundOre = oreDisplays.find((i) => (i.pos[0] <= clickPos[0] && i.cornerPos[0] >= clickPos[0] && i.pos[1] <= clickPos[1] && i.cornerPos[1] >= clickPos[1] && i.type != "voidOre" && i.yOffset == yOffset))
         if (foundOre) {
+            if (soundOn) {
+                breakSfx.playsfx()
+            }
             destroy(foundOre)
         }
     }
@@ -513,7 +547,6 @@ function generateSave() {
     let save = {"ores": oreSave, "money": money, "items": itemSave}
     let encryptedSave = btoa(JSON.stringify(save))
     localStorage.setItem("save", encryptedSave)
-    // screwing around with this because sc3d said not to
 }
 
 function loadSave() {
@@ -567,7 +600,7 @@ class Ore {
 
         this.rarityLevel = rarity >= 2 ? rarity >= 75 ? rarity >= 250 ? rarity >= 1000 ? rarity >= 7500 ? rarity >= 25000 ? rarity >= 125000 ? "beyond" : "unseen" : "mythic" : "epic" : "rare" : "uncommon" : "common" : "base"
         this.rarityColor = rarityColors[this.rarityLevel]
-        this.sellPrice = ~~(this.rarity * rarityMults[this.rarityLevel])
+        this.sellPrice = ~~(this.rarity * rarityMults[this.rarityLevel] / 4)
         
         this.particles = null
 
@@ -581,15 +614,18 @@ class Ore {
 }
 
 class OreDisplay {
-    constructor(parent, x, y, spawn = true) {
+    constructor(parent, x, y, spawn = true, yOff = yOffset) {
         this.texture = parent.texture
         this.type = parent.name
         this.pos = [x, y]
         this.spawn = spawn
         this.cornerPos = [x + 40, y + 40]
-        this.yOffset = yOffset
-        this.literalY = y + yOffset
+        this.yOffset = yOff
+        this.literalY = y + yOff
         this.deposit = Math.random() > 0.95 && parent.rarity > 1
+        if (this.deposit && soundOn) {
+            depositSfx.playsfx()
+        }
         this.particles = parent.particles
         this.spawnTime = parTime
     }
@@ -744,32 +780,49 @@ let copper = new Ore("copper", 15, "stone")
 let iron = new Ore("iron", 20, "stone")
 let coal = new Ore("coal", 25, "stone")
 let quartz = new Ore("quartz", 30, "stone")
+let chrome = new Ore("chrome", 75, "stone")
+chrome.particles = {frequency: 20, texture: "sparkle", speed: 2, lifetime: 15}
 let pyrite = new Ore("pyrite", 80, "stone")
 let bronzeRelic = new Ore("bronzeRelic", 400, "stone", {"display": "Bronze Relic"})
 let gold = new Ore("gold", 650, "stone")
 gold.particles = {frequency: 8, texture: "sparkle", speed: 3, lifetime: 20}
 let roseGold = new Ore("roseGold", 1111, "stone", {"display": "Rose Gold"})
 roseGold.particles = {frequency: 7, texture: "sparkle", speed: 3, lifetime: 25}
+let platinum = new Ore("platinum", 1200, "stone")
+platinum.particles = {frequency: 4, texture: "sparkle", speed: 3, lifetime: 40}
 let emerald = new Ore("emerald", 1500, "stone")
+emerald.particles = {frequency: 5, texture: "sparkle", speed: 4, lifteime: 20}
 let vyvyxyn = new Ore("vyvyxyn", 3333, "stone")
 vyvyxyn.particles = {frequency: 2, texture: "sparkle", speed: 2, lifetime: 40}
+let crysor = new Ore("crysor", 8000, "stone")
 let crystalResonance = new Ore("crystalResonance", 30000, "stone", {"display": "Crystal of Resonance"})
 stone.percentChunk = [percentsUsed[0], 100]
 
 let denseStone = new Ore("denseStone", 1, "denseStone", {"display": "Dense Stone"})
 let denseIron = new Ore("denseIron", 20, "denseStone", {"display": "Dense Iron"})
 let denseCoal = new Ore("denseCoal", 20, "denseStone", {"display": "Dense Coal"})
+let lead = new Ore("lead", 50, "denseStone")
+let feldspar = new Ore("feldspar", 180, "denseStone")
+feldspar.particles = {frequency: 20, texture: "sparkle", speed: 3, lifetime: 20}
 let amethyst = new Ore("amethyst", 200, "denseStone")
-amethyst.particles = {frequency: 20, texture: "sparkle", speed: 3, lifetime: 20}
-let diamond = new Ore("diamond", 1000, "denseStone", )
+amethyst.particles = {frequency: 15, texture: "sparkle", speed: 3, lifetime: 20}
+let tigersEye = new Ore("tigersEye", 750, {"display": "Tiger's Eye"})
+let diamond = new Ore("diamond", 1000, "denseStone")
 diamond.particles = {frequency: 5, texture: "sparkle", speed: 4, lifetime: 30}
+let foliatite = new Ore("foliatite", 4916, "denseStone")
 let blackDiamond = new Ore("blackDiamond", 5000, "denseStone", {"display": "Black Diamond"})
+let paralyte = new Ore("paralyte", 17171, "denseStone")
 blackDiamond.particles = {frequency: 3, texture: "sparkle", speed: 3, lifetime: 35}
 denseStone.percentChunk = [percentsUsed[1], 100]
 
 let basalt = new Ore("basalt", 1, "basalt")
 let basalticQuartz = new Ore("basalticQuartz", 30, "basalt", {"display": "Basaltic Quartz"})
+let redGarnet = new Ore("redGarnet", 30, "basalt", {"display": "Red Garnet"})
+redGarnet.particles = {frequency: 25, texture: "sparkle", speed: 2, lifetime: 20}
 let roseQuartz = new Ore("roseQuartz", 100, "basalt", {"display": "Rose Quartz"})
+let doodooQuartz = new Ore("doodooQuartz", 150, "basalt", {"display": "Smoky Quartz...?"})
+let mandarinGarnet = new Ore("mandarinGarnet", 900, "basalt", {"display": "Mandarin Garnet"})
+let porvileon = new Ore("porvileon", 12781, "basalt")
 basalt.percentChunk = [percentsUsed[2], 100]
 
 let magma = new Ore("magma", 1, "magma")
@@ -809,18 +862,56 @@ let closeShop = new Button("closeShop", [1225, 70], 64, 32, () => {shopVisible =
 closeShop.dependency = () => {return shopVisible}
 let buyDynamite = new Button("buyDynamite", [320, 200], 32, 16, () => {buy("dynamite")}, false, true)
 buyDynamite.dependency = () => {return shopVisible}
+// let buyTunnelBore = new Button("buyTunnelBore", [320, 400], 32, 16, () => {buy("tunnelBore")}, false, true)
+// buyTunnelBore.dependency = () => {return shopVisible}
+// Delayed hee hee!
 
-let dynamite = new Item("dynamite", 50, dynamiteUse)
+
+let dynamite = new Item("dynamite", 60, dynamiteUse)
 function dynamiteUse() {
     for (i of dynamitePattern) {
-        foundOre = oreDisplays.filter(j => j.yOffset == yOffset && j.type != voidOre).find((j) => {return j.pos[0] == i[0] + hotbarLoc[0] && j.pos[1] == i[1] + hotbarLoc[1]})
+        foundOre = oreDisplays.filter(j => j.yOffset == yOffset && j.type != "voidOre").find((j) => {return j.pos[0] == i[0] + hotbarLoc[0] && j.pos[1] == i[1] + hotbarLoc[1]})
         if (foundOre) {
             destroy(foundOre, "dynamite")
         }
     }
-    dynamiteSfx.playsfx()
+    if (soundOn) {
+        dynamiteSfx.playsfx()
+    }
     dynamite.amt -= 1
 }
+// let tunnelBore = new Item("tunnelBore", 1000, tunnelBoreUse)
+// function tunnelBoreUse() {
+//     foundOre = oreDisplays.filter(i => i.yOffset == yOffset && i.type != voidOre).find((i) => {return i.pos[0] == hotbarLoc[0] && i.pos[1] == hotbarLoc[1]})
+//     console.log
+//     if (foundOre) {
+//         destroy(foundOre)
+//         boreBlocks = 115
+//         boreInterval = setInterval(() => {
+//             console.log(oreDisplays.at(-1))
+//             destroy(oreDisplays.at(-1))
+//             boreBlocks -= 1
+//             if (boreBlocks == 0) {
+//                 clearInterval(boreInterval)
+//             }
+//         }, 20)
+//     } else {
+//         return 
+//     }
+    
+// }
+let pocket = new Item("pocket", 400, pocketUse)
+function pocketUse() {
+    let currentLayer = ~~(yOffset / 9200)
+    if (currentLayer == 3) {
+        return
+    }
+    yOffset = (currentLayer + 1) * 9200
+    voidOre.texture = voidTextures[~~(yOffset / 9200)]
+    generateOre(240, 240)
+    destroy(oreDisplays.at(-1, "pocket"))
+}
+//delayed due to many bugs
 
 function sellDependency(button, amt) {
     return () => { // functions returning functions which return wowie
