@@ -281,7 +281,7 @@ function render() {
         ctx.drawImage(dynamite.tx, 320, 200, 128, 128)
         ctx.fillStyle = "#9966cc"
         ctx.font = "40px sans-serif"
-        ctx.fillText("Dynamite - $60", 448, 240) // 800th line of code
+        ctx.fillText("Dynamite - $250", 448, 240) // 800th line of code
         ctx.font = "24px sans-serif"
         ctx.fillText("Blows up a small area collecting any materials in its way, doubling", 448, 270)
         ctx.fillText("gain from common resources. As a wise penguin once said,", 448, 304)
@@ -306,10 +306,10 @@ function render() {
         // delayed due to many bugs
 
         ctx.beginPath()
-        ctx.drawImage(dynamite.tx, 320, 388, 128, 128)
+        ctx.drawImage(pocket.tx, 320, 388, 128, 128)
         ctx.fillStyle = "#9966cc"
         ctx.font = "40px sans-serif"
-        ctx.fillText("Remote Air Bubble - $300", 448, 428) // 800thn'tn'tn't line of code
+        ctx.fillText("Remote Air Bubble - $2000", 448, 428) // 800thn'tn'tn't line of code
         ctx.font = "24px sans-serif"
         ctx.fillText("Creates a small bubble of air on the layer below you. Ores adjacent", 448, 458)
         ctx.fillText("to the bubble will become pumice. You must pronounce it \"poomis\"", 448, 492)
@@ -402,7 +402,6 @@ function generateOre(x, y, yOff = yOffset) {
     let currentLayer = ~~(yOff / 9200)
     let newOre = new OreDisplay(select(layerOres[currentLayer]), x, y, true, yOff)
     if (newOre.pos[1] == 920) {
-        console.log("you")
         newOre.yOffset = newOre.literalY
         newOre.pos[1] = 0
         newOre.cornerPos[1] = 40 
@@ -606,6 +605,7 @@ class Ore {
 
         allOres.push(this)
         if (rarity != 0) {
+            console.log(this)
             layerOres[this.layerNum].push(this)
         }
         oreDict[name] = this
@@ -802,11 +802,14 @@ let denseStone = new Ore("denseStone", 1, "denseStone", {"display": "Dense Stone
 let denseIron = new Ore("denseIron", 20, "denseStone", {"display": "Dense Iron"})
 let denseCoal = new Ore("denseCoal", 20, "denseStone", {"display": "Dense Coal"})
 let lead = new Ore("lead", 50, "denseStone")
+let titanium = new Ore("titanium", 70, "denseStone")
+let tungsten = new Ore("tungsten", 130, "denseStone")
 let feldspar = new Ore("feldspar", 180, "denseStone")
 feldspar.particles = {frequency: 20, texture: "sparkle", speed: 3, lifetime: 20}
 let amethyst = new Ore("amethyst", 200, "denseStone")
 amethyst.particles = {frequency: 15, texture: "sparkle", speed: 3, lifetime: 20}
-let tigersEye = new Ore("tigersEye", 750, {"display": "Tiger's Eye"})
+let scrapMetal = new Ore("scrapMetal", 300, "denseStone", {"display": "Scrap Metal"})
+let tigersEye = new Ore("tigersEye", 750, "denseStone", {"display": "Tiger's Eye"})
 let diamond = new Ore("diamond", 1000, "denseStone")
 diamond.particles = {frequency: 5, texture: "sparkle", speed: 4, lifetime: 30}
 let foliatite = new Ore("foliatite", 4916, "denseStone")
@@ -816,16 +819,23 @@ blackDiamond.particles = {frequency: 3, texture: "sparkle", speed: 3, lifetime: 
 denseStone.percentChunk = [percentsUsed[1], 100]
 
 let basalt = new Ore("basalt", 1, "basalt")
+let halite = new Ore("halite", 25, "basalt")
+let fluorite = new Ore("Fluorite", 25, "basalt")
 let basalticQuartz = new Ore("basalticQuartz", 30, "basalt", {"display": "Basaltic Quartz"})
 let redGarnet = new Ore("redGarnet", 30, "basalt", {"display": "Red Garnet"})
 redGarnet.particles = {frequency: 25, texture: "sparkle", speed: 2, lifetime: 20}
 let roseQuartz = new Ore("roseQuartz", 100, "basalt", {"display": "Rose Quartz"})
 let doodooQuartz = new Ore("doodooQuartz", 150, "basalt", {"display": "Smoky Quartz...?"})
+let silver = new Ore("silver", 350, "basalt")
 let mandarinGarnet = new Ore("mandarinGarnet", 900, "basalt", {"display": "Mandarin Garnet"})
+let greenGarnet = new Ore("greenGarnet", 6500, "basalt", {"display": "Green Garnet"})
+let bvylyvyncv = new Ore("bvylyvyncv", 9999, "basalt")
 let porvileon = new Ore("porvileon", 12781, "basalt")
 basalt.percentChunk = [percentsUsed[2], 100]
 
 let magma = new Ore("magma", 1, "magma")
+let conglomerate = new Ore("conglomerate", 80, "magma")
+let xyxyvylyn = new Ore("xyxyvylyn", 3333, "magma")
 magma.percentChunk = [percentsUsed[3], 100]
 // all above is redonculuous
 // no.
@@ -862,12 +872,14 @@ let closeShop = new Button("closeShop", [1225, 70], 64, 32, () => {shopVisible =
 closeShop.dependency = () => {return shopVisible}
 let buyDynamite = new Button("buyDynamite", [320, 200], 32, 16, () => {buy("dynamite")}, false, true)
 buyDynamite.dependency = () => {return shopVisible}
+let buyPocket = new Button("buyDynamite", [320, 400], 32, 16, () => {buy("pocket")}, false, true)
+buyPocket.dependency = () => {return shopVisible}
 // let buyTunnelBore = new Button("buyTunnelBore", [320, 400], 32, 16, () => {buy("tunnelBore")}, false, true)
 // buyTunnelBore.dependency = () => {return shopVisible}
 // Delayed hee hee!
 
 
-let dynamite = new Item("dynamite", 60, dynamiteUse)
+let dynamite = new Item("dynamite", 250, dynamiteUse)
 function dynamiteUse() {
     for (i of dynamitePattern) {
         foundOre = oreDisplays.filter(j => j.yOffset == yOffset && j.type != "voidOre").find((j) => {return j.pos[0] == i[0] + hotbarLoc[0] && j.pos[1] == i[1] + hotbarLoc[1]})
@@ -900,7 +912,7 @@ function dynamiteUse() {
 //     }
     
 // }
-let pocket = new Item("pocket", 400, pocketUse)
+let pocket = new Item("pocket", 2000, pocketUse)
 function pocketUse() {
     let currentLayer = ~~(yOffset / 9200)
     if (currentLayer == 3) {
@@ -910,6 +922,7 @@ function pocketUse() {
     voidOre.texture = voidTextures[~~(yOffset / 9200)]
     generateOre(240, 240)
     destroy(oreDisplays.at(-1, "pocket"))
+    pocket.amt -= 1
 }
 //delayed due to many bugs
 
@@ -980,6 +993,4 @@ if (localStorage.getItem("save")) {
     - read issues
     refactor nothing good job !!!! i think
     - listen to sc3d
-    - add smurf cat ore description: (we die, we hate, we truth)
-    - remove the ideas below refactor nothing good job !!! (jk) :o i'm so offended
 */
