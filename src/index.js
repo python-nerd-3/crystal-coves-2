@@ -836,6 +836,7 @@ basalt.percentChunk = [percentsUsed[2], 100]
 let magma = new Ore("magma", 1, "magma")
 let conglomerate = new Ore("conglomerate", 80, "magma")
 let xyxyvylyn = new Ore("xyxyvylyn", 3333, "magma")
+let vulkani = new Ore("vulkani", 28000, "magma", {"display": "Vulkanï"})
 magma.percentChunk = [percentsUsed[3], 100]
 // all above is redonculuous
 // no.
@@ -912,6 +913,7 @@ function dynamiteUse() {
 //     }
     
 // }
+//delayed due to many bugs
 let pocket = new Item("pocket", 2000, pocketUse)
 function pocketUse() {
     let currentLayer = ~~(yOffset / 9200)
@@ -924,7 +926,6 @@ function pocketUse() {
     destroy(oreDisplays.at(-1, "pocket"))
     pocket.amt -= 1
 }
-//delayed due to many bugs
 
 function sellDependency(button, amt) {
     return () => { // functions returning functions which return wowie
