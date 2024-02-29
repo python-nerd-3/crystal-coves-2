@@ -1,5 +1,6 @@
-# crystal-coves-2
-Big
+# Crystal Coves 2
+will make this later LOL...
+
 ## Making suggestions
 blablabla
 
@@ -13,7 +14,6 @@ We are looking for creative and unique ideas.
 - Giant paragraphs of suggestions (im not reading allat)
 - A new layer
 - Anything that requires networking or multiplayer play (ex. leaderboards, trading)
-- Use a framework (real programmers use jQuery)
 - Optimization (unless you do it for me)
 ## Modding
-Crystal Coves 2 modding is not fully supported right now
+Crystal Coves 2 modding is not fully supported right now.
