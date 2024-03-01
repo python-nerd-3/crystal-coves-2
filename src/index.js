@@ -1,3 +1,4 @@
+
 // hi before you dig into my code watch https://www.youtube.com/watch?v=EAOxlNiDWt0
 
 let canvas = document.querySelector("#gameCanvas")
@@ -779,8 +780,8 @@ let copper = new Ore("copper", 15, "stone")
 let iron = new Ore("iron", 20, "stone")
 let coal = new Ore("coal", 25, "stone")
 let quartz = new Ore("quartz", 30, "stone")
-let chrome = new Ore("chrome", 75, "stone")
-chrome.particles = {frequency: 20, texture: "sparkle", speed: 2, lifetime: 15}
+let chromeOre = new Ore("chrome", 75, "stone", {"display": "Chrome"})
+chromeOre.particles = {frequency: 20, texture: "sparkle", speed: 2, lifetime: 15}
 let pyrite = new Ore("pyrite", 80, "stone")
 let potteryShard = new Ore("potteryShard", 250, "stone", {"display": "Pottery Shard"})
 let bronzeRelic = new Ore("bronzeRelic", 400, "stone", {"display": "Bronze Relic"})
