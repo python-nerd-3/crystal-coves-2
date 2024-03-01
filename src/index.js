@@ -783,6 +783,7 @@ let quartz = new Ore("quartz", 30, "stone")
 let chrome = new Ore("chrome", 75, "stone")
 chrome.particles = {frequency: 20, texture: "sparkle", speed: 2, lifetime: 15}
 let pyrite = new Ore("pyrite", 80, "stone")
+let potteryShard = new Ore("potteryShard", 250, "stone", {"display": "Pottery Shard"})
 let bronzeRelic = new Ore("bronzeRelic", 400, "stone", {"display": "Bronze Relic"})
 let gold = new Ore("gold", 650, "stone")
 gold.particles = {frequency: 8, texture: "sparkle", speed: 3, lifetime: 20}
@@ -815,6 +816,7 @@ diamond.particles = {frequency: 5, texture: "sparkle", speed: 4, lifetime: 30}
 let foliatite = new Ore("foliatite", 4916, "denseStone")
 let blackDiamond = new Ore("blackDiamond", 5000, "denseStone", {"display": "Black Diamond"})
 let paralyte = new Ore("paralyte", 17171, "denseStone")
+let astralonDivinis = new Ore("astralonDivinis", 75000, "denseStone", {"display": "🌙 Astralon Divinis 🔆"})
 blackDiamond.particles = {frequency: 3, texture: "sparkle", speed: 3, lifetime: 35}
 denseStone.percentChunk = [percentsUsed[1], 100]
 
@@ -828,15 +830,21 @@ let roseQuartz = new Ore("roseQuartz", 100, "basalt", {"display": "Rose Quartz"}
 let doodooQuartz = new Ore("doodooQuartz", 150, "basalt", {"display": "Smoky Quartz...?"})
 let silver = new Ore("silver", 350, "basalt")
 let mandarinGarnet = new Ore("mandarinGarnet", 900, "basalt", {"display": "Mandarin Garnet"})
+mandarinGarnet.particles = {frequency: 15, texture: "sparkle", speed: 3, lifetime: 30}
+let uranium = new Ore("uranium", 3000, "basalt", {"display": "Hungry Helper"})
+let citrine = new Ore("citrine", 4000, "basalt", {"display": "Citrine"})
 let greenGarnet = new Ore("greenGarnet", 6500, "basalt", {"display": "Green Garnet"})
+greenGarnet.particles = {frequency: 10, texture: "sparkle", speed: 4, lifetime: 40}
 let bvylyvyncv = new Ore("bvylyvyncv", 9999, "basalt")
 let porvileon = new Ore("porvileon", 12781, "basalt")
 basalt.percentChunk = [percentsUsed[2], 100]
 
 let magma = new Ore("magma", 1, "magma")
 let conglomerate = new Ore("conglomerate", 80, "magma")
+let breccia = new Ore("breccia", 100, "magma")
 let xyxyvylyn = new Ore("xyxyvylyn", 3333, "magma")
 let vulkani = new Ore("vulkani", 28000, "magma", {"display": "Vulkanï"})
+vulkani.particles = {frequency: 1, texture: "char", speed: 5, lifetime: 50}
 magma.percentChunk = [percentsUsed[3], 100]
 // all above is redonculuous
 // no.
@@ -988,10 +996,3 @@ canvas.addEventListener("wheel", (e) => {
 if (localStorage.getItem("save")) {
     loadSave()
 }
-
-/*
-    TODO LIST 
-    - read issues
-    refactor nothing good job !!!! i think
-    - listen to sc3d
-*/
