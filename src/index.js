@@ -822,7 +822,7 @@ denseStone.percentChunk = [percentsUsed[1], 100]
 
 let basalt = new Ore("basalt", 1, "basalt")
 let halite = new Ore("halite", 25, "basalt")
-let fluorite = new Ore("Fluorite", 25, "basalt")
+let fluorite = new Ore("fluorite", 25, "basalt")
 let basalticQuartz = new Ore("basalticQuartz", 30, "basalt", {"display": "Basaltic Quartz"})
 let redGarnet = new Ore("redGarnet", 30, "basalt", {"display": "Red Garnet"})
 redGarnet.particles = {frequency: 25, texture: "sparkle", speed: 2, lifetime: 20}
