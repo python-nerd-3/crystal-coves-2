@@ -1,4 +1,3 @@
-
 // hi before you dig into my code watch https://www.youtube.com/watch?v=EAOxlNiDWt0
 
 let canvas = document.querySelector("#gameCanvas")
