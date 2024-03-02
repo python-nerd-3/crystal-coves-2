@@ -32,13 +32,15 @@ let parTime = 0
 const dtrConstant = Math.PI / 180
 let soundOn = true
 let notinfo = []
-let rarityMults = {"base": 0, "common": 1, "uncommon": 1.2, "rare": 1.5, "epic": 2, "mythic": 3, "unseen": 10, "beyond": 20}
+let rarityMults = {"base": 0, "common": 1, "uncommon": 1.2, "rare": 1.5, "epic": 2, "mythic": 3, "unseen": 8, "beyond": 15}
 let money = 0
 let sellAmt = 1
 let shopVisible = 0 * !"Is this the egg?"
 let items = []
 let itemDict = {}
 let hotbarLoc = false
+let loading = true
+let zoomWarn = false
 
 ctx.imageSmoothingEnabled = false
 
@@ -62,6 +64,14 @@ function tick() {
     }
     areaPars()
     render()
+    if (document.getElementsByTagName("div")[0].offsetLeft >= 0 && zoomWarn) {
+        zoomWarn = false
+        document.getElementsByTagName("span")[0].style.visibility = "hidden"
+    }
+    if (!document.getElementsByTagName("div")[0].offsetLeft >= 0 && !zoomWarn) {
+        zoomWarn = true
+        document.getElementsByTagName("span")[0].style.visibility = "shown"
+    }
 }
 
 function render() {
@@ -281,7 +291,7 @@ function render() {
         ctx.drawImage(dynamite.tx, 320, 200, 128, 128)
         ctx.fillStyle = "#9966cc"
         ctx.font = "40px sans-serif"
-        ctx.fillText("Dynamite - $250", 448, 240) // 800th line of code
+        ctx.fillText("Dynamite - $200", 448, 240) // 800th line of code
         ctx.font = "24px sans-serif"
         ctx.fillText("Blows up a small area collecting any materials in its way, doubling", 448, 270)
         ctx.fillText("gain from common resources. As a wise penguin once said,", 448, 304)
@@ -309,7 +319,7 @@ function render() {
         ctx.drawImage(pocket.tx, 320, 388, 128, 128)
         ctx.fillStyle = "#9966cc"
         ctx.font = "40px sans-serif"
-        ctx.fillText("Remote Air Bubble - $2000", 448, 428) // 800thn'tn'tn't line of code
+        ctx.fillText("Remote Air Bubble - $1,500", 448, 428) // 800thn'tn'tn't line of code
         ctx.font = "24px sans-serif"
         ctx.fillText("Creates a small bubble of air on the layer below you. Ores adjacent", 448, 458)
         ctx.fillText("to the bubble will become pumice. You must pronounce it \"poomis\"", 448, 492)
@@ -326,6 +336,19 @@ function render() {
         }
         ctx.closePath()
     })
+
+    if (loading) {
+        ctx.beginPath()
+        ctx.fillStyle = "#331144"
+        ctx.fillRect(0, 0, 1600, 920)
+        ctx.closePath()
+
+        ctx.beginPath()
+        ctx.fillStyle = "#9966cc"
+        ctx.font = "40px sans-serif"
+        ctx.fillText("Loading...", 40, 40)
+        ctx.closePath()
+    }
 } 
 
 function areaPars() {
@@ -364,11 +387,18 @@ function playsfx() {
     }
 }
 
+function checkVisible(elm) { // haha i love copy from stack overflow
+    let rect = elm.getBoundingClientRect();
+    let viewHeight = Math.max(document.documentElement.clientHeight, window.innerHeight);
+    return !(rect.bottom < 0 || rect.top - viewHeight >= 0);
+}
+
 Audio.prototype.playsfx = playsfx
 
 // stack overflow is th​e best website for developers
 
 function startGame() {
+    loading = false
     for (let i of Array(40).keys()) {
         oreDisplays.push(new OreDisplay(grass, i * 40, 160, false))
         oreDisplays.push(new OreDisplay(dirt, i * 40, 200, false))
@@ -437,7 +467,7 @@ function generateOre(x, y, yOff = yOffset) {
                 unseenSfx.playsfx()
             }
             let dispName = parent.properties?.display || capitalizeFirstLetter(parent.name)
-            notinfo = [`${parent.rarityLevel.toUpperCase()} ORE: ${dispName}${newOre.deposit ? " Deposit" : ""} has spawned!${newOre.deposit ? "!" : ""}${newOre.rarityLevel == "unseen" ? "!" : ""} (1/${parent.rarity.toLocaleString()})`, parent.rarityColor, 300]
+            notinfo = [`${parent.rarityLevel.toUpperCase()} ORE: ${dispName}${newOre.deposit ? " Deposit" : ""} has spawned!${newOre.deposit ? "!" : ""}${newOre.rarityLevel == "unseen" || newOre.rarityLevel == "beyond" ? "!" : ""} (1/${parent.rarity.toLocaleString() * newOre.deposit ? 20 : 1})`, parent.rarityColor, 300]
         }
     }
 
@@ -792,11 +822,11 @@ roseGold.particles = {frequency: 7, texture: "sparkle", speed: 3, lifetime: 25}
 let platinum = new Ore("platinum", 1200, "stone")
 platinum.particles = {frequency: 4, texture: "sparkle", speed: 3, lifetime: 40}
 let emerald = new Ore("emerald", 1500, "stone")
-emerald.particles = {frequency: 5, texture: "sparkle", speed: 4, lifteime: 20}
+emerald.particles = {frequency: 5, texture: "sparkle", speed: 3, lifteime: 20}
 let vyvyxyn = new Ore("vyvyxyn", 3333, "stone")
 vyvyxyn.particles = {frequency: 2, texture: "sparkle", speed: 2, lifetime: 40}
-let crysor = new Ore("crysor", 8000, "stone")
-let crystalResonance = new Ore("crystalResonance", 30000, "stone", {"display": "Crystal of Resonance"})
+let crysor = new Ore("crysor", 11000, "stone")
+let crystalResonance = new Ore("crystalResonance", 60000, "stone", {"display": "Crystal of Resonance"})
 stone.percentChunk = [percentsUsed[0], 100]
 
 let denseStone = new Ore("denseStone", 1, "denseStone", {"display": "Dense Stone"})
@@ -815,8 +845,8 @@ let diamond = new Ore("diamond", 1000, "denseStone")
 diamond.particles = {frequency: 5, texture: "sparkle", speed: 4, lifetime: 30}
 let foliatite = new Ore("foliatite", 4916, "denseStone")
 let blackDiamond = new Ore("blackDiamond", 5000, "denseStone", {"display": "Black Diamond"})
-let paralyte = new Ore("paralyte", 17171, "denseStone")
-let astralonDivinis = new Ore("astralonDivinis", 75000, "denseStone", {"display": "🌙 Astralon Divinis 🔆"})
+let paralyte = new Ore("paralyte", 19191, "denseStone")
+let astralonDivinis = new Ore("astralonDivinis", 160000, "denseStone", {"display": "🌙 Astralon Divinis 🔆"})
 blackDiamond.particles = {frequency: 3, texture: "sparkle", speed: 3, lifetime: 35}
 denseStone.percentChunk = [percentsUsed[1], 100]
 
@@ -831,19 +861,20 @@ let doodooQuartz = new Ore("doodooQuartz", 150, "basalt", {"display": "Smoky Qua
 let silver = new Ore("silver", 350, "basalt")
 let mandarinGarnet = new Ore("mandarinGarnet", 900, "basalt", {"display": "Mandarin Garnet"})
 mandarinGarnet.particles = {frequency: 15, texture: "sparkle", speed: 3, lifetime: 30}
-let uranium = new Ore("uranium", 3000, "basalt", {"display": "Hungry Helper"})
+let uranium = new Ore("uranium", 3000, "basalt", {"display": "Uranium"})
 let citrine = new Ore("citrine", 4000, "basalt", {"display": "Citrine"})
-let greenGarnet = new Ore("greenGarnet", 6500, "basalt", {"display": "Green Garnet"})
+let greenGarnet = new Ore("greenGarnet", 5500, "basalt", {"display": "Green Garnet"})
 greenGarnet.particles = {frequency: 10, texture: "sparkle", speed: 4, lifetime: 40}
-let bvylyvyncv = new Ore("bvylyvyncv", 9999, "basalt")
-let porvileon = new Ore("porvileon", 12781, "basalt")
+let bvylyvyncv = new Ore("bvylyvyncv", 13331, "basalt")
+let porvileon = new Ore("porvileon", 17643, "basalt")
 basalt.percentChunk = [percentsUsed[2], 100]
 
 let magma = new Ore("magma", 1, "magma")
 let conglomerate = new Ore("conglomerate", 80, "magma")
 let breccia = new Ore("breccia", 100, "magma")
 let xyxyvylyn = new Ore("xyxyvylyn", 3333, "magma")
-let vulkani = new Ore("vulkani", 28000, "magma", {"display": "Vulkanï"})
+let infernalGold = new Ore("infernalGold", 4000, "magma", {"display": "Infernal Gold"})
+let vulkani = new Ore("vulkani", 50000, "magma", {"display": "Vulkanï"})
 vulkani.particles = {frequency: 1, texture: "char", speed: 5, lifetime: 50}
 magma.percentChunk = [percentsUsed[3], 100]
 // all above is redonculuous
@@ -888,7 +919,7 @@ buyPocket.dependency = () => {return shopVisible}
 // Delayed hee hee!
 
 
-let dynamite = new Item("dynamite", 250, dynamiteUse)
+let dynamite = new Item("dynamite", 200, dynamiteUse)
 function dynamiteUse() {
     for (i of dynamitePattern) {
         foundOre = oreDisplays.filter(j => j.yOffset == yOffset && j.type != "voidOre").find((j) => {return j.pos[0] == i[0] + hotbarLoc[0] && j.pos[1] == i[1] + hotbarLoc[1]})
@@ -922,7 +953,7 @@ function dynamiteUse() {
     
 // }
 //delayed due to many bugs
-let pocket = new Item("pocket", 2000, pocketUse)
+let pocket = new Item("pocket", 1500, pocketUse)
 function pocketUse() {
     let currentLayer = ~~(yOffset / 9200)
     if (currentLayer == 3) {

@@ -1,5 +1,7 @@
 body {
     background-color: #203;
+    color: #96c;
+    font-family: sans-serif;
 }
 
 html {
@@ -16,12 +18,19 @@ html {
     background-position: 0px 0px;
 }
 
-#whywontchangebgimageworkbruh {
+span {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 200%;
+}
+
+div {
     position: absolute;
-    left: calc(50% - 950px);
-    top: calc(50% - 451px);
-    transform: scale(1.01);
-    visibility: hidden;
+    top: calc(50% - 490px);
+    left: calc(50% - 840px);
+    padding: 10px;
 }
 
 @font-face {
