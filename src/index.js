@@ -467,7 +467,7 @@ function generateOre(x, y, yOff = yOffset) {
                 unseenSfx.playsfx()
             }
             let dispName = parent.properties?.display || capitalizeFirstLetter(parent.name)
-            notinfo = [`${parent.rarityLevel.toUpperCase()} ORE: ${dispName}${newOre.deposit ? " Deposit" : ""} has spawned!${newOre.deposit ? "!" : ""}${newOre.rarityLevel == "unseen" || newOre.rarityLevel == "beyond" ? "!" : ""} (1/${parent.rarity.toLocaleString() * newOre.deposit ? 20 : 1})`, parent.rarityColor, 300]
+            notinfo = [`${parent.rarityLevel.toUpperCase()} ORE: ${dispName}${newOre.deposit ? " Deposit" : ""} has spawned!${newOre.deposit ? "!" : ""}${newOre.rarityLevel == "unseen" || newOre.rarityLevel == "beyond" ? "!" : ""} (1/${parent.rarity.toLocaleString() * (newOre.deposit ? 20 : 1)})`, parent.rarityColor, 300]
         }
     }
 
