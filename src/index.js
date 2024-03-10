@@ -23,7 +23,7 @@ let rarityColors = {"base": "#7f7f7f", "common": "#d9d9d9", "uncommon": "#93c47d
 let settingsVisible = false
 let creditsVisible = false
 let menuOpen = false
-let parsToLoad = ["placeholder", "char", "dust", "sparkle", "stoneShard"]
+let parsToLoad = ["placeholder", "char", "dust", "sparkle", "stoneShard", "snowflake", "darkle", "heyguysquandaledinglehere"]
 let parTextures = {}
 let particles = []
 let deadIds = []
@@ -32,7 +32,6 @@ let parTime = 0
 const dtrConstant = Math.PI / 180
 let soundOn = true
 let notinfo = []
-let rarityMults = {"base": 0, "common": 1, "uncommon": 1.2, "rare": 1.5, "epic": 2, "mythic": 3, "unseen": 8, "beyond": 15}
 let money = 0
 let sellAmt = 1
 let shopVisible = 0 * !"Is this the egg?"
@@ -41,6 +40,8 @@ let itemDict = {}
 let hotbarLoc = false
 let loading = true
 let zoomWarn = false
+let scrollDelta = 0
+let version = "2.0.2"
 
 ctx.imageSmoothingEnabled = false
 
@@ -72,6 +73,7 @@ function tick() {
         zoomWarn = true
         document.getElementsByTagName("span")[0].style.visibility = "shown"
     }
+    invScroll = Math.min(invScroll + scrollDelta * 20, 0)
 }
 
 function render() {
@@ -291,7 +293,7 @@ function render() {
         ctx.drawImage(dynamite.tx, 320, 200, 128, 128)
         ctx.fillStyle = "#9966cc"
         ctx.font = "40px sans-serif"
-        ctx.fillText("Dynamite - $200", 448, 240) // 800th line of code
+        ctx.fillText("Dynamite - $" + dynamite.price.toLocaleString(), 448, 240) // 800th line of code
         ctx.font = "24px sans-serif"
         ctx.fillText("Blows up a small area collecting any materials in its way, doubling", 448, 270)
         ctx.fillText("gain from common resources. As a wise penguin once said,", 448, 304)
@@ -319,7 +321,7 @@ function render() {
         ctx.drawImage(pocket.tx, 320, 388, 128, 128)
         ctx.fillStyle = "#9966cc"
         ctx.font = "40px sans-serif"
-        ctx.fillText("Remote Air Bubble - $1,500", 448, 428) // 800thn'tn'tn't line of code
+        ctx.fillText("Remote Air Bubble - $" + pocket.price.toLocaleString(), 448, 428) // 800thn'tn'tn't line of code
         ctx.font = "24px sans-serif"
         ctx.fillText("Creates a small bubble of air on the layer below you. Ores adjacent", 448, 458)
         ctx.fillText("to the bubble will become pumice. You must pronounce it \"poomis\"", 448, 492)
@@ -470,7 +472,6 @@ function generateOre(x, y, yOff = yOffset) {
             notinfo = [`${parent.rarityLevel.toUpperCase()} ORE: ${dispName}${newOre.deposit ? " Deposit" : ""} has spawned!${newOre.deposit ? "!" : ""}${newOre.rarityLevel == "unseen" || newOre.rarityLevel == "beyond" ? "!" : ""} (1/${(parent.rarity * (newOre.deposit ? 20 : 1)).toLocaleString()})`, parent.rarityColor, 300]
         }
     }
-
 }
 
 function buy(item) {
@@ -573,7 +574,7 @@ function selectEven(list) {
 function generateSave() {
     let oreSave = objMap(oreDict, (i) => {return [!i.discovered, (i.amt * (i.name.charCodeAt(0) - 96))]})
     let itemSave = objMap(itemDict, (i) => {return i.amt * (i.name.charCodeAt(0) - 96)})
-    let save = {"ores": oreSave, "money": money, "items": itemSave}
+    let save = {"ores": oreSave, "money": money, "items": itemSave, "version": version}
     let encryptedSave = btoa(JSON.stringify(save))
     localStorage.setItem("save", encryptedSave)
 }
@@ -596,14 +597,20 @@ function loadSave() {
             })
         }
     }
-    money = decryptedSave.money
-    console.log(decryptedSave.items)
-    for (let i in decryptedSave.items) {
-        itemDict[i].amt = decryptedSave.items[i] / (itemDict[i].name.charCodeAt(0) - 96)
-        if (~~(itemDict[i].amt) != itemDict[i].amt) {
-            localStorage.removeItem("save")
-            window.write("rip bozo 💀💀💀💀")
+    if ([decryptedSave.version, version].sort()[0] == decryptedSave.version && decryptedSave.version != version) {
+        notinfo = [`New update ${version}!`, "#00FF00", 150]
+    }
+    if (decryptedSave.version) {
+        for (let i in decryptedSave.items) {
+            itemDict[i].amt = decryptedSave.items[i] / (itemDict[i].name.charCodeAt(0) - 96)
+            if (~~(itemDict[i].amt) != itemDict[i].amt) {
+                localStorage.removeItem("save")
+                window.write("rip bozo 💀💀💀💀")
+            }
         }
+        money = decryptedSave.money
+    } else {
+        notinfo = ["Your money and items have been wiped due to an economy revamp.", "#FF0000", 150]
     }
 }
 
@@ -629,7 +636,7 @@ class Ore {
 
         this.rarityLevel = rarity >= 2 ? rarity >= 75 ? rarity >= 250 ? rarity >= 1000 ? rarity >= 7500 ? rarity >= 25000 ? rarity >= 125000 ? "beyond" : "unseen" : "mythic" : "epic" : "rare" : "uncommon" : "common" : "base"
         this.rarityColor = rarityColors[this.rarityLevel]
-        this.sellPrice = ~~(this.rarity * rarityMults[this.rarityLevel] / 4)
+        this.sellPrice = ~~(this.rarity / (4 * Math.log10(this.rarity)))
         
         this.particles = null
 
@@ -814,7 +821,9 @@ let chromeOre = new Ore("chrome", 75, "stone", {"display": "Chrome"})
 chromeOre.particles = {frequency: 20, texture: "sparkle", speed: 2, lifetime: 15}
 let pyrite = new Ore("pyrite", 80, "stone")
 let potteryShard = new Ore("potteryShard", 250, "stone", {"display": "Pottery Shard"})
+potteryShard.particles = {frequency: 25, texture: "dust", speed: 5, lifetime: 30}
 let bronzeRelic = new Ore("bronzeRelic", 400, "stone", {"display": "Bronze Relic"})
+bronzeRelic.particles = {frequency: 25, texture: "dust", speed: 5, lifetime: 30}
 let gold = new Ore("gold", 650, "stone")
 gold.particles = {frequency: 8, texture: "sparkle", speed: 3, lifetime: 20}
 let roseGold = new Ore("roseGold", 1111, "stone", {"display": "Rose Gold"})
@@ -824,8 +833,9 @@ platinum.particles = {frequency: 4, texture: "sparkle", speed: 3, lifetime: 40}
 let emerald = new Ore("emerald", 1500, "stone")
 emerald.particles = {frequency: 5, texture: "sparkle", speed: 3, lifteime: 20}
 let vyvyxyn = new Ore("vyvyxyn", 3333, "stone")
-vyvyxyn.particles = {frequency: 2, texture: "sparkle", speed: 2, lifetime: 40}
+vyvyxyn.particles = {frequency: 1, texture: "sparkle", speed: 2, lifetime: 40}
 let crysor = new Ore("crysor", 11000, "stone")
+crysor.particles = {frequency: 2, texture: "snowflake", speed: 3, lifetime: 35}
 let crystalResonance = new Ore("crystalResonance", 60000, "stone", {"display": "Crystal of Resonance"})
 stone.percentChunk = [percentsUsed[0], 100]
 
@@ -840,14 +850,16 @@ feldspar.particles = {frequency: 20, texture: "sparkle", speed: 3, lifetime: 20}
 let amethyst = new Ore("amethyst", 200, "denseStone")
 amethyst.particles = {frequency: 15, texture: "sparkle", speed: 3, lifetime: 20}
 let scrapMetal = new Ore("scrapMetal", 300, "denseStone", {"display": "Scrap Metal"})
+scrapMetal.particles = {frequency: 25, texture: "dust", speed: 5, lifetime: 30}
 let tigersEye = new Ore("tigersEye", 750, "denseStone", {"display": "Tiger's Eye"})
+tigersEye.particles = {frequency: 19, texture: "sparkle", speed: 2, lifetime: 25}
 let diamond = new Ore("diamond", 1000, "denseStone")
 diamond.particles = {frequency: 5, texture: "sparkle", speed: 4, lifetime: 30}
 let foliatite = new Ore("foliatite", 4916, "denseStone")
 let blackDiamond = new Ore("blackDiamond", 5000, "denseStone", {"display": "Black Diamond"})
+blackDiamond.particles = {frequency: 3, texture: "sparkle", speed: 3, lifetime: 35}
 let paralyte = new Ore("paralyte", 19191, "denseStone")
 let astralonDivinis = new Ore("astralonDivinis", 160000, "denseStone", {"display": "🌙 Astralon Divinis 🔆"})
-blackDiamond.particles = {frequency: 3, texture: "sparkle", speed: 3, lifetime: 35}
 denseStone.percentChunk = [percentsUsed[1], 100]
 
 let basalt = new Ore("basalt", 1, "basalt")
@@ -866,6 +878,7 @@ let citrine = new Ore("citrine", 4000, "basalt", {"display": "Citrine"})
 let greenGarnet = new Ore("greenGarnet", 5500, "basalt", {"display": "Green Garnet"})
 greenGarnet.particles = {frequency: 10, texture: "sparkle", speed: 4, lifetime: 40}
 let bvylyvyncv = new Ore("bvylyvyncv", 13331, "basalt")
+bvylyvyncv.particles = {frequency: 1, texture: "heyguysquandaledinglehere", speed: 4, lifetime: 40}
 let porvileon = new Ore("porvileon", 17643, "basalt")
 basalt.percentChunk = [percentsUsed[2], 100]
 
@@ -873,7 +886,9 @@ let magma = new Ore("magma", 1, "magma")
 let conglomerate = new Ore("conglomerate", 80, "magma")
 let breccia = new Ore("breccia", 100, "magma")
 let xyxyvylyn = new Ore("xyxyvylyn", 3333, "magma")
+xyxyvylyn.particles = {frequency: 1, texture: "darkle", speed: 2, lifetime: 40}
 let infernalGold = new Ore("infernalGold", 4000, "magma", {"display": "Infernal Gold"})
+infernalGold.particles = {frequency: 3, texture: "char", speed: 3, lifetime: 40}
 let vulkani = new Ore("vulkani", 50000, "magma", {"display": "Vulkanï"})
 vulkani.particles = {frequency: 1, texture: "char", speed: 5, lifetime: 50}
 magma.percentChunk = [percentsUsed[3], 100]
@@ -896,7 +911,7 @@ soundOnBtn.dependency = () => {return soundOn && settingsVisible}
 let soundOff = new Button("soundOff", [925, 160], 128, 32, () => {soundOn = !soundOn}, false, true)
 soundOff.dependency = () => {return !soundOn && settingsVisible}
 
-let credits = new Button("credits", [1525, 235], 64, 32, () => {creditsVisible = true; menuOpen = true})
+let credits = new Button("credits", [1525, 305], 32, 32, () => {creditsVisible = true; menuOpen = true})
 let closeCredits = new Button("closeCredits", [1025, 70], 64, 32, () => {creditsVisible = false; menuOpen = false}, false, true)
 closeCredits.dependency = () => {return creditsVisible}
 
@@ -907,7 +922,7 @@ sellTen.dependency = sellDependency(sellTen, 10)
 let sellMax = new Button("sellMax", [1420, 0], 32, 16, () => {sellAmt = "max"}, false, true)
 sellMax.dependency = sellDependency(sellMax, "max")
 
-let shop = new Button("shop", [1525, 310], 64, 32, () => {shopVisible = true, menuOpen = true}, true, false)
+let shop = new Button("shop", [1525, 235], 64, 32, () => {shopVisible = true, menuOpen = true}, true, false)
 let closeShop = new Button("closeShop", [1225, 70], 64, 32, () => {shopVisible = false, menuOpen = false}, false, true)
 closeShop.dependency = () => {return shopVisible}
 let buyDynamite = new Button("buyDynamite", [320, 200], 32, 16, () => {buy("dynamite")}, false, true)
@@ -932,28 +947,8 @@ function dynamiteUse() {
     }
     dynamite.amt -= 1
 }
-// let tunnelBore = new Item("tunnelBore", 1000, tunnelBoreUse)
-// function tunnelBoreUse() {
-//     foundOre = oreDisplays.filter(i => i.yOffset == yOffset && i.type != voidOre).find((i) => {return i.pos[0] == hotbarLoc[0] && i.pos[1] == hotbarLoc[1]})
-//     console.log
-//     if (foundOre) {
-//         destroy(foundOre)
-//         boreBlocks = 115
-//         boreInterval = setInterval(() => {
-//             console.log(oreDisplays.at(-1))
-//             destroy(oreDisplays.at(-1))
-//             boreBlocks -= 1
-//             if (boreBlocks == 0) {
-//                 clearInterval(boreInterval)
-//             }
-//         }, 20)
-//     } else {
-//         return 
-//     }
-    
-// }
-//delayed due to many bugs
-let pocket = new Item("pocket", 1500, pocketUse)
+
+let pocket = new Item("pocket", 600, pocketUse)
 function pocketUse() {
     let currentLayer = ~~(yOffset / 9200)
     if (currentLayer == 3) {
@@ -977,7 +972,7 @@ function sellDependency(button, amt) {
             ctx.closePath()
         }
         return invVisible
-    }
+    } // like using the more interesting features in languages like this
 }
 
 for (let i of layers) {
@@ -1015,6 +1010,16 @@ document.addEventListener("keydown", (e) => {
     } else if (e.key == "s" && e.ctrlKey) {
         e.preventDefault()
         generateSave()
+    } else if (e.key == "ArrowLeft") {
+        scrollDelta = 1
+    }
+    else if (e.key == "ArrowRight") {
+        scrollDelta = -1
+    }
+})
+document.addEventListener("keyup", (e) => {
+    if ((e.key == "ArrowRight" || e.key == "ArrowLeft") && invVisible) {
+        scrollDelta = 0
     }
 })
 canvas.addEventListener("wheel", (e) => {
