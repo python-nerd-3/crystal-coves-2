@@ -6,10 +6,12 @@ let ctx = canvas.getContext("2d")
 let loadProg = 0
 let loaded = false
 let percentsUsed = [0, 0, 0, 0]
+let poolPercs = {"meteor": 0}
 let layers = ["stone", "denseStone", "basalt", "magma"]
 let oreDisplays = []
 let allOres = []
 let layerOres = [[], [], [], []]
+let poolOres = {"meteor": []}
 let discoveredOres = []
 let voidTextures = []
 let oreDict = {}
@@ -41,7 +43,10 @@ let hotbarLoc = false
 let loading = true
 let zoomWarn = false
 let scrollDelta = 0
-let version = "2.0.2"
+let version = "2.1"
+let ingameEvents = []
+let meteorLocs = []
+let infoVisible = false
 
 ctx.imageSmoothingEnabled = false
 
@@ -57,8 +62,10 @@ let breakSfx = new Audio("./assets/audio/break.mp3")
 breakSfx.volume = 0.1
 let depositSfx = new Audio("./assets/audio/deposit.mp3")
 
+let eventSfx = new Audio("./assets/audio/event.mp3")
+
 function tick() {
-    if (loadProg >= allOres.length + layerOres.length + buttons.length + parsToLoad.length + items.length && loaded == false) {
+    if (loadProg >= allOres.length + layerOres.length + buttons.length + parsToLoad.length + items.length + ingameEvents.length && loaded == false) {
         console.log("Loaded textures in " + performance.now() + "ms")
         loaded = true
         startGame()
@@ -81,7 +88,10 @@ function render() {
     ctx.fillStyle = bg
     ctx.fillRect(0, 0, 1600, 920)
     if (yOffset === 0) {
-        ctx.fillStyle = "#77aaff"
+        let skyGradient = ctx.createLinearGradient(0, 0, 0, 280)
+        skyGradient.addColorStop(0.1, "#0060fe")
+        skyGradient.addColorStop(1, "#77aaff")
+        ctx.fillStyle = skyGradient
         ctx.fillRect(0, 0, 1600, 280)
         let skyEase = ctx.createLinearGradient(0, 280, 0, 320)
         skyEase.addColorStop(0, "#77aaff")
@@ -212,6 +222,16 @@ function render() {
         ctx.fillText("Sell: ", 1295, discoveredOres.length * 100 + 110 + invScroll)
         ctx.closePath()
         
+    } else {
+        ctx.beginPath();
+        x = 1600
+        for (i of ingameEvents) {
+            if (i.active) {
+                x -= 80
+                ctx.drawImage(i.icon, x, 842, 64, 64)
+                console.log("a")
+            }
+        }
     }
     if (menuOpen) {
         ctx.beginPath()
@@ -249,6 +269,59 @@ function render() {
         ctx.fillText(`Probably like 72 Stack Overflow devs`, 520, 310)
         ctx.fillText(`This project does not use any JS libraries`, 520, 340)
         ctx.fillText(`Shoutout to Tim-Berners Lee for inventing the Internet`, 520, 370)
+        ctx.closePath()
+    }
+    if (settingsVisible) {
+        ctx.beginPath();
+        ctx.fillStyle = "#9966cc"
+        ctx.rect(480, 40, 640, 840)
+        ctx.fill()
+        ctx.closePath()
+
+        ctx.beginPath()
+        ctx.fillStyle = "#331144"
+        ctx.rect(500, 60, 600, 800)
+        ctx.fill()
+        ctx.closePath()
+
+        ctx.beginPath()
+        ctx.fillStyle = "#9966cc"
+        ctx.font = "bold 50px sans-serif"
+        ctx.fillText("SETTINGS", 670, 120)
+        ctx.closePath()
+    }
+    if (infoVisible) {
+        ctx.beginPath();
+        ctx.fillStyle = "#9966cc"
+        ctx.rect(480, 40, 640, 840)
+        ctx.fill()
+        ctx.closePath()
+
+        ctx.beginPath()
+        ctx.fillStyle = "#331144"
+        ctx.rect(500, 60, 600, 800)
+        ctx.fill()
+        ctx.closePath()
+
+        ctx.beginPath()
+        ctx.fillStyle = "#9966cc"
+        ctx.font = "bold 50px sans-serif"
+        ctx.fillText("CONTROLS", 680, 120)
+        ctx.closePath()
+
+        ctx.beginPath()
+        ctx.fillStyle = "#9966cc"
+        ctx.font = "30px sans-serif"
+        ctx.fillText(`↕`, 520, 160)
+        ctx.fillText(`[`, 520, 200)
+        ctx.fillText(`↔`, 520, 240)
+        ctx.fillText(`🖰`, 520, 300)
+        ctx.font = "20px sans-serif"
+        ctx.fillText(`Change layer`, 560, 160)
+        ctx.fillText(`Toggle inventory`, 560, 200)
+        ctx.fillText(`Scroll in inventory`, 560, 240)
+        ctx.fillText(`Left click: Break block`, 560, 280)
+        ctx.fillText(`Right click: Use item, sell ore`, 560, 320)
         ctx.closePath()
     }
     if (settingsVisible) {
@@ -432,7 +505,12 @@ function destroy(target, src = "default") {
 
 function generateOre(x, y, yOff = yOffset) {
     let currentLayer = ~~(yOff / 9200)
-    let newOre = new OreDisplay(select(layerOres[currentLayer]), x, y, true, yOff)
+    let oreType = select(layerOres[currentLayer])
+    console.log([x, y + yOff])
+    if (meteorLocs.some((i) => {return JSON.stringify(i) == JSON.stringify([x, y + yOff])})) {
+        oreType = select(poolOres["meteor"])
+    }
+    let newOre = new OreDisplay(oreType, x, y, true, yOff)
     if (newOre.pos[1] == 920) {
         newOre.yOffset = newOre.literalY
         newOre.pos[1] = 0
@@ -559,7 +637,7 @@ function select(list) {
     let percent = Math.random() * 100
     for (let i of list) {
         if (i.percentChunk[0] <= percent && i.percentChunk[1] > percent) {
-            return i//;
+            return i//; //; //; //; //; //;
         }
     }
 }
@@ -614,16 +692,35 @@ function loadSave() {
     }
 }
 
+function recalcChunks(l) {
+    percentsUsed[l] = 0
+    for (i of layerOres[l]) {
+        if (i.rarity > 1) {
+            i.percentChunk = [percentsUsed[l], percentsUsed[l] + (100/i.rarity)]
+            percentsUsed[l] += (100 / i.rarity)
+        }
+    }
+    oreDict[layers[l]].percentChunk = [percentsUsed[l], 100]
+}
+
 class Ore {
     constructor(name, rarity, layer, properties = {}) {
         this.name = name
         this.rarity = rarity
         this.layer = layer
 
-        this.layerNum = layers.indexOf(layer)
-        if (rarity > 1) {
-            this.percentChunk = [percentsUsed[this.layerNum], percentsUsed[this.layerNum] + (100/rarity)]
-            percentsUsed[this.layerNum] += (100 / this.rarity)
+        if (!this.layer.includes("pool:")) {
+            this.layerNum = layers.indexOf(layer)
+            if (rarity > 1) {
+                this.percentChunk = [percentsUsed[this.layerNum], percentsUsed[this.layerNum] + (100/rarity)]
+                percentsUsed[this.layerNum] += (100 / this.rarity)
+            }
+        } else {
+            this.pool = this.layer.substring(5)
+            if (rarity > 1) {
+                this.percentChunk = [poolPercs[this.pool], poolPercs[this.pool] + (100/rarity)]
+                poolPercs[this.pool] += (100 / this.rarity)
+            } 
         }
 
         this.texture = new Image(32, 32)
@@ -641,9 +738,11 @@ class Ore {
         this.particles = null
 
         allOres.push(this)
-        if (rarity != 0) {
+        if (rarity != 0 && !this.layer.includes("pool:")) {
             console.log(this)
             layerOres[this.layerNum].push(this)
+        } else if (rarity != 0) {
+            poolOres[this.pool].push(this)
         }
         oreDict[name] = this
         // AGHGHAGHGAGGAHGAHGGHA!????????!?!?!
@@ -805,6 +904,37 @@ class Particle {
     }
 }
 
+class IngameEvent {
+    constructor(start, dur, del, sf, ef, name) {
+        this.start = start
+        this.dur = dur
+        this.del = del
+        this.sf = sf
+        this.ef = ef
+        this.active = false
+        this.interval = dur + del
+        this.name = name
+        this.icon = new Image(32, 32)
+        this.icon.src = `./assets/eventIcons/${name}.png`
+        this.icon.onload = () => {loadProg += 1}
+
+        ingameEvents.push(this)
+    }
+    tick() {
+        let date = new Date()
+        let mins = date.getMinutes() + 60 * date.getHours() + this.start
+        if (mins % (this.interval) <= this.dur && !this.active) {
+            this.active = true
+            this.sf()
+            notinfo = [eventDescs[this.name], "#FFD700", 300]
+            eventSfx.playsfx()
+        } else if (this.active && mins % (this.interval) >= this.dur) {
+            this.active = false
+            this.ef()
+        }
+    }
+}
+
 let voidOre = new Ore("voidOre", 0, "stone", {"display": "stop breaking my game"})
 let grass = new Ore("grass", 0, "stone")
 let dirt = new Ore("dirt", 0, "stone")
@@ -880,6 +1010,7 @@ greenGarnet.particles = {frequency: 10, texture: "sparkle", speed: 4, lifetime: 
 let bvylyvyncv = new Ore("bvylyvyncv", 13331, "basalt")
 bvylyvyncv.particles = {frequency: 1, texture: "heyguysquandaledinglehere", speed: 4, lifetime: 40}
 let porvileon = new Ore("porvileon", 17643, "basalt")
+let missingSignal = new Ore("missingSignal", 65536, "basalt", {"display": "Missing Signal"})
 basalt.percentChunk = [percentsUsed[2], 100]
 
 let magma = new Ore("magma", 1, "magma")
@@ -894,6 +1025,12 @@ vulkani.particles = {frequency: 1, texture: "char", speed: 5, lifetime: 50}
 magma.percentChunk = [percentsUsed[3], 100]
 // all above is redonculuous
 // no.
+
+let meteorite = new Ore("meteorite", 1, "pool:meteor")
+let meteoricFeldspar = new Ore("meteoricFeldspar", 90, "pool:meteor", {"display": "Meteoric Feldpsar"})
+let biovessel = new Ore("biovessel", 6000, "pool:meteor")
+meteorite.percentChunk = [poolPercs["meteor"], 100]
+
 let inv = new Button("inv", [1525, 10], 64, 32, () => {invVisible = !invVisible})
 let save = new Button("save", [1525, 85], 64, 32, generateSave)
 
@@ -914,6 +1051,9 @@ soundOff.dependency = () => {return !soundOn && settingsVisible}
 let credits = new Button("credits", [1525, 305], 32, 32, () => {creditsVisible = true; menuOpen = true})
 let closeCredits = new Button("closeCredits", [1025, 70], 64, 32, () => {creditsVisible = false; menuOpen = false}, false, true)
 closeCredits.dependency = () => {return creditsVisible}
+let info = new Button("info", [1557, 305], 32, 32, () => {infoVisible = true; menuOpen = true})
+let closeInfo = new Button("closeInfo", [1025, 70], 64, 32, () => {infoVisible = false; menuOpen = false}, false, true)
+closeInfo.dependency = () => {return creditsVisible}
 
 let sellOne = new Button("sellOne", [1340, 0], 32, 16, () => {sellAmt = 1}, false, true)
 sellOne.dependency = sellDependency(sellOne, 1)
@@ -961,6 +1101,36 @@ function pocketUse() {
     pocket.amt -= 1
 }
 
+let meteorShower = new IngameEvent(0, 10, debug ? 0 : 50, () => {
+    for (i of layerOres[1]) {
+        if (i.rarity != 1) {
+            i.rarity *= 0.95
+        }
+    }
+    feldspar.rarity = 120
+    recalcChunks(1)
+    let meteorOff = 9200
+    for (i of Array(10).keys()) {
+        for (i of Array(3).keys()) {
+            let loc = [~~(Math.random() * 1600 / 40) * 40, ~~(Math.random() * 920 / 40) * 40 + meteorOff]
+            let posMap = meteorPattern.map((i) => {return [i[0] + loc[0], i[1] + loc[1]]})
+            posMap.forEach((i) => {meteorLocs.push(i)})
+        }
+        meteorOff += 920
+    }
+    
+}, () => {
+    for (i of layerOres[1]) {
+        if (i.rarity != 1) {
+            i.rarity /= 0.95
+        }
+    }
+    feldspar.rarity = 180
+    recalcChunks(1)
+
+    meteorLocs = []
+}, "meteorShower")
+
 function sellDependency(button, amt) {
     return () => { // functions returning functions which return wowie
         button.pos[1] = discoveredOres.length * 100 + 90 + invScroll
@@ -989,6 +1159,9 @@ setInterval(generateSave, 10000)
 setInterval(() => {
     deadIds = []
 }, 100) // setting it directly after no worky for some reason
+setInterval(() => {
+    ingameEvents.forEach(i => i.tick())
+}, 1000)
 
 canvas.addEventListener("click", click) // spaghet
 canvas.addEventListener("contextmenu", rclick)
@@ -1004,7 +1177,7 @@ document.addEventListener("keydown", (e) => {
             voidOre.texture = voidTextures[~~(yOffset / 9200)]
         }
     } else if (e.key == "g" && debug) {
-        generateOre(100, 120)
+        generateOre(120, 120)
     } else if (e.key == "[") {
         invVisible = !invVisible
     } else if (e.key == "s" && e.ctrlKey) {
