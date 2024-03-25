@@ -928,7 +928,7 @@ class IngameEvent {
             this.sf()
             notinfo = [eventDescs[this.name], "#FFD700", 300]
             eventSfx.playsfx()
-        } else if (this.active && mins % (this.interval) >= this.dur) {
+        } else if (this.active && mins % (this.interval) > this.dur) {
             this.active = false
             this.ef()
         }
