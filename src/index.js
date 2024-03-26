@@ -21,7 +21,7 @@ let bgImage = document.querySelector("#whywontchangebgimageworkbruh")
 let debug = window.location.href.includes("file")
 let invVisible = false 
 let invScroll = 0
-let rarityColors = {"base": "#7f7f7f", "common": "#d9d9d9", "uncommon": "#93c47d", "rare": "#4a86e8", "epic": "#ffd966", "mythic": "#46bdc6", "unseen": "#9900ff", "beyond": "#000000"}
+let rarityColors = {"base": "#7f7f7f", "common": "#d9d9d9", "uncommon": "#93c47d", "rare": "#4a86e8", "epic": "#ffd966", "mythic": "#46bdc6", "unreal": "#9900ff", "beyond": "#000000"}
 let settingsVisible = false
 let creditsVisible = false
 let menuOpen = false
@@ -43,10 +43,12 @@ let hotbarLoc = false
 let loading = true
 let zoomWarn = false
 let scrollDelta = 0
-let version = "2.1"
+let version = "2.1.1"
 let ingameEvents = []
 let meteorLocs = []
 let infoVisible = false
+let staticImages = []
+let lastLarrow = -1000
 
 ctx.imageSmoothingEnabled = false
 
@@ -54,7 +56,7 @@ let music = new Audio("./assets/audio/music.mp3")
 music.loop = true
 let epicSfx = new Audio("./assets/audio/epicSfx.mp3")
 let mythicSfx = new Audio("./assets/audio/mythicSfx.mp3")
-let unseenSfx = new Audio("./assets/audio/unseenSfx.mp3")
+let unrealSfx = new Audio("./assets/audio/unrealSfx.mp3")
 
 let dynamiteSfx = new Audio("./assets/audio/boom.mp3")
 
@@ -65,7 +67,7 @@ let depositSfx = new Audio("./assets/audio/deposit.mp3")
 let eventSfx = new Audio("./assets/audio/event.mp3")
 
 function tick() {
-    if (loadProg >= allOres.length + layerOres.length + buttons.length + parsToLoad.length + items.length + ingameEvents.length && loaded == false) {
+    if (loadProg >= allOres.length + layerOres.length + buttons.length + parsToLoad.length + items.length + ingameEvents.length + staticImages.length && loaded == false) {
         console.log("Loaded textures in " + performance.now() + "ms")
         loaded = true
         startGame()
@@ -98,6 +100,7 @@ function render() {
         skyEase.addColorStop(1, "rgba(0,0,0,0)")
         ctx.fillStyle = skyEase
         ctx.fillRect(0, 280, 1600, 40)
+        ctx.drawImage(tree.img, 32, 32, 128, 128)
     }
     ctx.fillStyle = `rgba(0,0,0,${yOffset / (layers.length * 9200 * 2)}`
     ctx.fillRect(0, 0, 1600, 920)
@@ -154,13 +157,21 @@ function render() {
         notinfo[2] -= 1
         ctx.beginPath();
         ctx.font = "bold 40px sans-serif"
+        ctx.strokeStyle = notinfo[1] == "#000000" ? "#ffffff" : shadeColor(notinfo[1], -40)
+        ctx.lineWidth = 5
+        ctx.miterLimit = 2
         ctx.fillStyle = notinfo[1]
+        ctx.strokeText(notinfo[0], 15, 45)
         ctx.fillText(notinfo[0], 15, 45)
         ctx.closePath()
     } else {
         ctx.beginPath()
         ctx.fillStyle = "#00ff7f"
         ctx.font = "30px sans-serif"
+        ctx.strokeStyle = "#00994c"
+        ctx.lineWidth = 5
+        ctx.miterLimit = 2
+        ctx.strokeText(`$${money.toLocaleString()}`, 15, 45)
         ctx.fillText(`$${money.toLocaleString()}`, 15, 45)
         ctx.closePath()
     }
@@ -189,7 +200,7 @@ function render() {
             } else if (i.rarity == 1) {
                 ctx.fillText("Layer ore", 1370, 120 + (ind * 100) + invScroll)
             } else {
-                ctx.fillText("1/" + i.rarity.toLocaleString() + " | $" + i.sellPrice.toLocaleString(), 1370, 120 + (ind * 100) + invScroll );
+                ctx.fillText("1/" + i.dispRarity.toLocaleString() + " | $" + i.sellPrice.toLocaleString(), 1370, 120 + (ind * 100) + invScroll );
             }
             ctx.fillText(i.amt.toLocaleString(), 1370, 140 + (ind * 100) + invScroll);
             ctx.strokeStyle = i.rarityColor
@@ -228,8 +239,10 @@ function render() {
         for (i of ingameEvents) {
             if (i.active) {
                 x -= 80
+                ctx.fillStyle = "rgba(0.7,0.7,0.7,0.2)" 
+                ctx.roundRect(x - 5, 837, 74, 74, 10)
+                ctx.fill()
                 ctx.drawImage(i.icon, x, 842, 64, 64)
-                console.log("a")
             }
         }
     }
@@ -265,10 +278,9 @@ function render() {
         ctx.fillText(`My friend made/revamped a lot of the textures`, 520, 190)
         ctx.fillText(`Compound-codes did like nothing but he has permission so`, 520, 220)
         ctx.fillText(`Music is Solar Fractals by Waterflame`, 520, 250)
-        ctx.fillText(`Inspired by REX: Reincarnated on Roblox`, 520, 280)
-        ctx.fillText(`Probably like 72 Stack Overflow devs`, 520, 310)
-        ctx.fillText(`This project does not use any JS libraries`, 520, 340)
-        ctx.fillText(`Shoutout to Tim-Berners Lee for inventing the Internet`, 520, 370)
+        ctx.fillText(`Inspired by REx: Reincarnated on Roblox`, 520, 280)
+        ctx.fillText(`This project does not use any JS libraries`, 520, 310)
+        ctx.fillText(`Shoutout to Tim-Berners Lee for inventing the Internet`, 520, 340)
         ctx.closePath()
     }
     if (settingsVisible) {
@@ -421,7 +433,7 @@ function render() {
         ctx.beginPath()
         ctx.fillStyle = "#9966cc"
         ctx.font = "40px sans-serif"
-        ctx.fillText("Loading...", 40, 40)
+        ctx.fillText(`Loading... ${loadProg}/${allOres.length + layerOres.length + buttons.length + parsToLoad.length + items.length + ingameEvents.length + staticImages.length}`, 80, 410)
         ctx.closePath()
     }
 } 
@@ -468,6 +480,31 @@ function checkVisible(elm) { // haha i love copy from stack overflow
     return !(rect.bottom < 0 || rect.top - viewHeight >= 0);
 }
 
+function shadeColor(color, percent) {
+
+    var R = parseInt(color.substring(1,3),16);
+    var G = parseInt(color.substring(3,5),16);
+    var B = parseInt(color.substring(5,7),16);
+
+    R = parseInt(R * (100 + percent) / 100);
+    G = parseInt(G * (100 + percent) / 100);
+    B = parseInt(B * (100 + percent) / 100);
+
+    R = (R<255)?R:255;  
+    G = (G<255)?G:255;  
+    B = (B<255)?B:255;  
+
+    R = Math.round(R)
+    G = Math.round(G)
+    B = Math.round(B)
+
+    var RR = ((R.toString(16).length==1)?"0"+R.toString(16):R.toString(16));
+    var GG = ((G.toString(16).length==1)?"0"+G.toString(16):G.toString(16));
+    var BB = ((B.toString(16).length==1)?"0"+B.toString(16):B.toString(16));
+
+    return "#"+RR+GG+BB;
+} // stac overflowing
+
 Audio.prototype.playsfx = playsfx
 
 // stack overflow is th​e best website for developers
@@ -485,6 +522,9 @@ function startGame() {
 
 function destroy(target, src = "default") {
     let dynaplier = src == "dynamite" && (oreDict[target.type].rarityLevel == "common" || oreDict[target.type].rarityLevel == "base") ? 2 : 1
+    if (["40,160", "80,160", "120,160"].includes(String(target.pos)) && yOffset == 0) {
+        return
+    }
     addOre(oreDict[target.type], target.deposit ? selectEven([5, 6, 7]) * dynaplier : dynaplier)
     // for (let i of Array(3).keys()) {
     //     new Particle("stoneShard", "gravity", "yOffset", target.pos[0] + 20, target.pos[1], (Math.random() - 0.5) * 20, (Math.random() * 5) + 5, 2)
@@ -536,18 +576,18 @@ function generateOre(x, y, yOff = yOffset) {
 
     if (!oreExists && !(y <= 280 && yOffset == 0) && 0 <= x && x <= 1600) {
         oreDisplays.push(newOre)
-        if (parent.rarity >= 1000) {
+        if (parent.dispRarity >= 1000) {
             if (parent.rarityLevel == "epic" && soundOn) {
                 epicSfx.playsfx()
             }
             if (parent.rarityLevel == "mythic" && soundOn) {
                 mythicSfx.playsfx()
             }
-            if (parent.rarityLevel == "unseen" && soundOn) {
-                unseenSfx.playsfx()
+            if (["unreal", "beyond"].includes(parent.rarityLevel) && soundOn) {
+                unrealSfx.playsfx()
             }
             let dispName = parent.properties?.display || capitalizeFirstLetter(parent.name)
-            notinfo = [`${parent.rarityLevel.toUpperCase()} ORE: ${dispName}${newOre.deposit ? " Deposit" : ""} has spawned!${newOre.deposit ? "!" : ""}${newOre.rarityLevel == "unseen" || newOre.rarityLevel == "beyond" ? "!" : ""} (1/${(parent.rarity * (newOre.deposit ? 20 : 1)).toLocaleString()})`, parent.rarityColor, 300]
+            notinfo = [`${parent.rarityLevel.toUpperCase()} ORE: ${dispName}${newOre.deposit ? " Deposit" : ""} has spawned!${newOre.deposit ? "!" : ""}${newOre.rarityLevel == "unreal" || newOre.rarityLevel == "beyond" ? "!" : ""} (1/${(parent.dispRarity * (newOre.deposit ? 20 : 1)).toLocaleString()})`, parent.rarityColor, 300]
         }
     }
 }
@@ -731,9 +771,10 @@ class Ore {
         this.discovered = false
         this.amt = 0
 
-        this.rarityLevel = rarity >= 2 ? rarity >= 75 ? rarity >= 250 ? rarity >= 1000 ? rarity >= 7500 ? rarity >= 25000 ? rarity >= 125000 ? "beyond" : "unseen" : "mythic" : "epic" : "rare" : "uncommon" : "common" : "base"
+        this.rarityLevel = rarity >= 2 ? rarity >= 75 ? rarity >= 250 ? rarity >= 1000 ? rarity >= 7500 ? rarity >= 25000 ? rarity >= 125000 ? "beyond" : "unreal" : "mythic" : "epic" : "rare" : "uncommon" : "common" : "base"
         this.rarityColor = rarityColors[this.rarityLevel]
         this.sellPrice = ~~(this.rarity / (4 * Math.log10(this.rarity)))
+        this.dispRarity = rarity
         
         this.particles = null
 
@@ -935,6 +976,15 @@ class IngameEvent {
     }
 }
 
+class StaticImage {
+    constructor(name, w, h) {
+        this.img = new Image(w, h)
+        this.img.src = `./assets/static/${name}.png`
+        this.img.onload = () => {loadProg += 1}
+        staticImages.push(this)
+    }
+}
+
 let voidOre = new Ore("voidOre", 0, "stone", {"display": "stop breaking my game"})
 let grass = new Ore("grass", 0, "stone")
 let dirt = new Ore("dirt", 0, "stone")
@@ -1131,6 +1181,8 @@ let meteorShower = new IngameEvent(0, 10, debug ? 0 : 50, () => {
     meteorLocs = []
 }, "meteorShower")
 
+let tree = new StaticImage("tree", 64, 64)
+
 function sellDependency(button, amt) {
     return () => { // functions returning functions which return wowie
         button.pos[1] = discoveredOres.length * 100 + 90 + invScroll
@@ -1193,6 +1245,12 @@ document.addEventListener("keydown", (e) => {
 document.addEventListener("keyup", (e) => {
     if ((e.key == "ArrowRight" || e.key == "ArrowLeft") && invVisible) {
         scrollDelta = 0
+        if (e.key == "ArrowLeft") {
+            if (performance.now() - lastLarrow < 500) {
+                invScroll = 0
+            }
+            lastLarrow = performance.now()
+        }
     }
 })
 canvas.addEventListener("wheel", (e) => {
