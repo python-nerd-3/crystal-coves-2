@@ -467,11 +467,9 @@ function objMap(obj, func) {
 } // thank you 49.2k rep stack overflow guy
 
 function playsfx() {
-    if (this.paused) {
-        this.play()
-    } else {
-        this.currentTime = 0
-    }
+    let newAudio = this.cloneNode(true)
+    newAudio.volume = this.volume
+    newAudio.play()
 }
 
 function checkVisible(elm) { // haha i love copy from stack overflow
